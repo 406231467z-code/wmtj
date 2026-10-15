@@ -112,13 +112,14 @@ function cancelRemove() {
 }
 
 .cl-title {
+  font-family: var(--f-head);
   font-size: 14px;
-  color: #6b4b2a;
+  color: var(--accent);
 }
 
 .cl-meta {
   font-size: 12px;
-  color: #8a7f6d;
+  color: var(--ink-3);
 }
 
 .chart-lib h3 .btn.tiny {
@@ -136,18 +137,24 @@ function cancelRemove() {
   flex: 1;
   min-width: 0;
   padding: 6px 10px;
-  border: 1px solid #cfc5b0;
-  border-radius: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
   font-size: 13px;
-  background: #fff;
-  color: #3a3a3a;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.cl-search input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .cl-empty {
   margin: 6px 0 0;
   font-size: 12.5px;
   line-height: 1.7;
-  color: #8a7f6d;
+  color: var(--ink-3);
 }
 
 .cl-list {
@@ -167,19 +174,22 @@ function cancelRemove() {
 }
 
 .cl-row + .cl-row {
-  border-top: 1px dotted #e2d9c8;
+  border-top: 1px dotted var(--line-soft);
 }
 
+/* 三种行状态都用同一淡底，靠左侧色条区分（近似底色在暗色皮肤下分不出） */
 .cl-row:hover {
-  background: #faf6ec;
+  background: var(--accent-soft);
 }
 
 .cl-row.active {
-  background: #fdf3e0;
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .cl-row.pending {
-  background: #fbecea;
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--warn);
 }
 
 .cl-main {
@@ -199,7 +209,7 @@ function cancelRemove() {
 
 .cl-name {
   font-weight: 700;
-  color: #3a3a3a;
+  color: var(--ink);
   white-space: nowrap;
 }
 
@@ -207,8 +217,8 @@ function cancelRemove() {
   margin-left: 4px;
   padding: 0 4px;
   border-radius: 2px;
-  background: #b0432f;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
   font-size: 11px;
   font-style: normal;
   font-weight: 400;
@@ -216,14 +226,14 @@ function cancelRemove() {
 }
 
 .cl-time {
-  color: #2f5d8a;
+  color: var(--indigo);
   font-size: 12.5px;
   white-space: nowrap;
 }
 
 .cl-sex,
 .cl-when {
-  color: #8a7f6d;
+  color: var(--ink-3);
   font-size: 12px;
   white-space: nowrap;
 }

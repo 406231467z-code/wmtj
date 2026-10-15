@@ -42,6 +42,46 @@ const pan = ref(null)
 const panRef = ref(null)
 const sel = ref(0)
 
+/* ---------------- 界面风格（4 套皮肤，选择后记忆） ---------------- */
+
+/** 皮肤只换 CSS 变量集，同一份 DOM 不重渲染 */
+const SKINS = [
+  { k: 'xuanzhi', zi: '宣纸', nm: '水墨', label: '宣纸 · 水墨' },
+  { k: 'qingyu', zi: '青玉', nm: '錾刻', label: '青玉 · 錾刻' },
+  { k: 'cyber', zi: '赛博', nm: '玻璃', label: '赛博 · 玻璃' },
+  { k: 'night', zi: '深夜', nm: '护眼', label: '深夜 · 护眼' }
+]
+const SKIN_KEY = 'tianjige_skin'
+
+/** localStorage 在隐私模式下可能抛错，读写都兜一下 */
+function readSkin() {
+  try {
+    const v = localStorage.getItem(SKIN_KEY)
+    if (v && SKINS.some((s) => s.k === v)) return v
+  } catch (e) {
+    /* 读不到就用默认皮肤 */
+  }
+  return 'xuanzhi'
+}
+
+const skin = ref(readSkin())
+const skinMeta = computed(() => SKINS.find((s) => s.k === skin.value) || SKINS[0])
+const skinZi = computed(() => skinMeta.value.zi)
+const skinNm = computed(() => skinMeta.value.nm)
+
+watch(
+  skin,
+  (v) => {
+    document.documentElement.dataset.skin = v
+    try {
+      localStorage.setItem(SKIN_KEY, v)
+    } catch (e) {
+      /* 写不进去只影响下次打开，本次显示不受影响 */
+    }
+  },
+  { immediate: true }
+)
+
 /* ---------------- 命盘库（localStorage，只存基本信息） ---------------- */
 
 /** 已保存的命盘列表 */
@@ -782,7 +822,28 @@ onMounted(() => {
 
 <template>
   <div class="app-header">
-    <h1>文墨天机 · 紫微斗数排盘</h1>
+    <h1>天机阁 · 紫微斗数排盘</h1>
+
+    <!-- 风格切换：右上角小胶囊。原生 select 透明覆盖在胶囊上，
+         手机上直接调起系统下拉，不占地方。选择写入 localStorage，下次打开默认沿用。 -->
+    <div class="skinbar">
+      <label class="sel" title="界面风格">
+        <span class="seal"><span class="zi">{{ skinZi }}</span></span>
+        <span class="nm">{{ skinNm }}</span>
+        <svg class="cv" viewBox="0 0 10 6" aria-hidden="true">
+          <path
+            d="M1 1l4 4 4-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.4"
+            stroke-linecap="round"
+          />
+        </svg>
+        <select v-model="skin" aria-label="界面风格">
+          <option v-for="s in SKINS" :key="s.k" :value="s.k">{{ s.label }}</option>
+        </select>
+      </label>
+    </div>
   </div>
 
   <form class="panel" novalidate @submit.prevent="doPaipan">
@@ -808,25 +869,27 @@ onMounted(() => {
         </select>
       </div>
 
-      <div class="field narrow">
-        <label>年</label>
-        <input type="text" inputmode="numeric" v-model="form.year" />
-      </div>
-      <div class="field narrow">
-        <label>月</label>
-        <input type="text" inputmode="numeric" v-model="form.month" />
-      </div>
-      <div class="field narrow">
-        <label>日</label>
-        <input type="text" inputmode="numeric" v-model="form.day" />
-      </div>
-      <div class="field narrow">
-        <label>时</label>
-        <input type="text" inputmode="numeric" v-model="form.hour" />
-      </div>
-      <div class="field narrow">
-        <label>分</label>
-        <input type="text" inputmode="numeric" v-model="form.minute" />
+      <!-- 出生时间：年 / 月 / 日 / 时:分 共用一个标签、排成一行。
+           五个框等分宽度（年给 1.4 倍），窄屏也不折行，不再五个独立小框各带一个标签。 -->
+      <div class="field span2">
+        <label>出生时间</label>
+        <div class="dt">
+          <input
+            class="y"
+            type="text"
+            inputmode="numeric"
+            aria-label="年"
+            v-model="form.year"
+          />
+          <span class="sep">年</span>
+          <input type="text" inputmode="numeric" aria-label="月" v-model="form.month" />
+          <span class="sep">月</span>
+          <input type="text" inputmode="numeric" aria-label="日" v-model="form.day" />
+          <span class="sep">日</span>
+          <input type="text" inputmode="numeric" aria-label="时" v-model="form.hour" />
+          <span class="sep">:</span>
+          <input type="text" inputmode="numeric" aria-label="分" v-model="form.minute" />
+        </div>
       </div>
 
       <div v-if="form.calendar === 'lunar'" class="field">
@@ -848,7 +911,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="field">
+      <div class="field span2">
         <label>快捷输入</label>
         <div class="input-row">
           <!-- keydown + prevent：原来是 keyup，回车会同时触发表单隐式提交，

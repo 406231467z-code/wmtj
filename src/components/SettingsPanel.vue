@@ -104,19 +104,20 @@ function onChange(key) {
 }
 
 .s-title {
+  font-family: var(--f-head);
   font-weight: 600;
-  color: #6b5b45;
+  color: var(--accent);
   font-size: 13px;
 }
 
 .s-toggle {
   font-size: 12px;
-  color: #8a7f6d;
+  color: var(--ink-3);
 }
 
 .s-body {
   margin-top: 10px;
-  border-top: 1px dashed #ded3bf;
+  border-top: 1px dashed var(--line-soft);
   padding-top: 10px;
 }
 
@@ -126,7 +127,7 @@ function onChange(key) {
 
 .s-gtitle {
   font-size: 12px;
-  color: #8a7f6d;
+  color: var(--ink-3);
   margin-bottom: 4px;
 }
 
@@ -145,7 +146,7 @@ function onChange(key) {
 }
 
 .s-name {
-  color: #5c5140;
+  color: var(--ink-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -155,9 +156,10 @@ function onChange(key) {
   height: 24px;
   font-size: 12px;
   padding: 0 4px;
-  border: 1px solid #cfc5b0;
+  border: 1px solid var(--line);
   border-radius: 3px;
-  background: #fff;
+  background: var(--paper);
+  color: var(--ink);
   max-width: 150px;
 }
 
@@ -167,6 +169,6 @@ function onChange(key) {
   gap: 10px;
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px dashed #ded3bf;
+  border-top: 1px dashed var(--line-soft);
 }
 </style>
