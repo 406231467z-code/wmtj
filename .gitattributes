@@ -1,0 +1,10 @@
+# 统一按 LF 存库，检出时按平台转换（Windows 转 CRLF）
+* text=auto
+
+# 二进制资源不做换行转换
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

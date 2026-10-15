@@ -1,0 +1,19 @@
+{
+  "name": "wenmo-tianji-vue",
+  "version": "1.0.0",
+  "private": true,
+  "description": "文墨天机紫微斗数排盘 —— 由 Flash/ActionScript3 源码移植的 Vue3 实现",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.4.21"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.2.0"
+  }
+}

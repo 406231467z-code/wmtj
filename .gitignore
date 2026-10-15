@@ -1,0 +1,29 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+.vite/
+
+# 日志（本地 dev / vite 调试输出）
+*.log
+*.err
+
+# 编辑器
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 本地环境变量
+.env
+.env.local
+.env.*.local
