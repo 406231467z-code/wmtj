@@ -1,6 +1,6 @@
 # 文墨天机 · 紫微斗数排盘
 
-由 Flash / ActionScript3 源码移植的紫微斗数排盘 Vue3 实现。纯前端，无后端依赖，命盘数据保存在浏览器 localStorage。
+纯前端的紫微斗数排盘工具，无后端依赖，命盘数据保存在浏览器 localStorage。
 
 ## 快速开始
 

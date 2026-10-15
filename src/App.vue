@@ -433,18 +433,6 @@ function resetCfg() {
   doPaipan()
 }
 
-/** 配置摘要：给中宫显示（把 cfg 数字代号翻成可读名） */
-const BRIGHT_NAME = { 1: '全书派', 2: '中州派', 3: '现代一', 4: '现代二' }
-const SKIN_NAME = { 1: '飞星盘', 2: '三合盘', 3: '四化盘' }
-const cfgSummary = computed(() => {
-  const c = cfg.value
-  return [
-    SKIN_NAME[c.cfg_skin_type] || '三合盘',
-    `亮度${BRIGHT_NAME[c.cfg_miaoxian] || c.cfg_miaoxian}`,
-    `魁钺法${c.cfg_ax_kuiyue}`,
-    `空劫法${c.cfg_ax_jkxk}`
-  ].join('　')
-})
 
 function onSelect(i) {
   sel.value = i
@@ -734,87 +722,6 @@ watch(quickText, (v) => {
   if (!quickEditing.value) quick.value = v
 })
 
-const solarText = computed(() => {
-  if (!pan.value) return ''
-  const s = pan.value.solarClock
-  const t = pan.value.solarTrueSolarTime
-  const f = (o) =>
-    `${o.y}-${String(o.m).padStart(2, '0')}-${String(o.d).padStart(2, '0')} ` +
-    `${String(o.h).padStart(2, '0')}:${String(o.min).padStart(2, '0')}`
-  return `${f(s)}　真太阳时：${f(t)}`
-})
-
-// ---------------- 盘面文本导出 ----------------
-const exportInfo = ref('')
-
-function buildPanText() {
-  if (!pan.value) return ''
-  const p = pan.value
-  const x = xianPan.value
-  const L = []
-  L.push(`【文墨天机 · 紫微斗数】${form.name || '匿 名'}　${p.sex === 1 ? '乾造' : '坤造'}`)
-  L.push(`公历：${solarText.value}`)
-  L.push(`农历：${p.lunar.IMonthCn}${p.lunar.IDayCn}（${p.lunar.lYear}年 · ${p.lunar.Animal}）`)
-  L.push(`四柱：${p.bzText.year} ${p.bzText.month} ${p.bzText.day} ${p.bzText.hour}`)
-  L.push(`命宫：${p.mingGongName.trim()}　身宫：${p.shenGongName.trim()}　${p.wuXingJuName}（${p.shunXing ? '顺行' : '逆行'}）`)
-  L.push(`命主：${p.mingZhu}　身主：${p.shenZhu}　亮度流派：${p.brightness.levelName}`)
-  if (p.laiYinGongs?.length) {
-    L.push(`来因宫：${p.laiYinGongs.map((i) => gongAt(i).nameM.trim()).join('、')}`)
-  }
-  L.push(`生年四化：${p.shengNianSiHua.map((s) => `${s.star}化${s.type}`).join(' ')}`)
-  if (view.value !== 'benming' && x) {
-    L.push('')
-    L.push(`—— ${VIEWS.find((v) => v.k === view.value).t} ——`)
-    L.push(`大限：${x.dx.label}（${x.dx.startYear}-${x.dx.endYear}）落 ${x.dx.gongName}宫`)
-    if (x.ln) L.push(`流年：${x.ln.year} ${x.ln.gz}　${x.ln.age}岁`)
-    L.push(`子年斗君：${D.ZHI[x.douJun - 1]}宫　正月宫：${D.ZHI[x.zhengYueGong - 1]}宫`)
-    if (view.value !== 'daxian') L.push(`${XIAN_LABEL[view.value]}：${xianGanText.value}`)
-  }
-  L.push('')
-  L.push('宫位　地支　干支　主星　辅曜　煞曜　杂曜　长生/博士/岁前/将前')
-  for (const g of (x ? x.gongs : p.gongs)) {
-    const nm = x ? xianGongName(x, g, x.mode) : g.nameM.trim()
-    const s = (a, b) => g.stars.filter((t) => t.id >= a && t.id <= b)
-      .map((t) => t.name + (t.brightnessName ? `[${t.brightnessName}]` : '') +
-        (t.sihua.length ? `{${t.sihua.join('')}}` : '')).join('')
-    L.push([
-      nm, D.ZHI[g.zhi - 1], g.ganName + g.zhiName,
-      s(1, 14), s(15, 22), s(23, 28), s(29, 82),
-      [g.changSheng, g.boShi, g.suiQian, g.jiangQian].filter(Boolean).join('/')
-    ].join('\t'))
-  }
-  if (x) {
-    L.push('')
-    L.push('运流曜：')
-    const fields = [
-      ['运曜', 'yunYao'], ['流年曜', 'liuYao'], ['流月曜', 'yueYao'],
-      ['流日曜', 'riYao'], ['流时曜', 'shiYao'], ['小限曜', 'xxYao']
-    ]
-    for (const [label, f] of fields) {
-      const rows = x.gongs.map((g) => (g[f] || []).map((y) => y.name).join(''))
-        .filter(Boolean)
-      if (rows.length) {
-        L.push(`  ${label}：` + x.gongs.map((g) => `${D.ZHI[g.zhi - 1]}${(g[f] || []).map((y) => y.name).join('')}`)
-          .filter((r) => r.length > 1).join(' '))
-      }
-    }
-  }
-  return L.join('\n')
-}
-
-async function doExport() {
-  const t = buildPanText()
-  exportInfo.value = `已生成 ${t.length} 字符`
-  const ok = await copyText(t)
-  exportInfo.value += ok ? '（已复制到剪贴板）' : '（剪贴板不可用，请用下方文本框手动复制）'
-  return t
-}
-
-const exportText = ref('')
-function doExportBox() {
-  exportText.value = doExport()
-}
-
 /**
  * 首屏恢复：优先用上次留下的草稿，其次打开最近更新过的命盘，都没有就留空等填写。
  * 只恢复基本信息，排盘在恢复之后现算。
@@ -876,7 +783,6 @@ onMounted(() => {
 <template>
   <div class="app-header">
     <h1>文墨天机 · 紫微斗数排盘</h1>
-    <span class="sub">由 Flash / ActionScript3 源码移植的 Vue3 实现</span>
   </div>
 
   <form class="panel" novalidate @submit.prevent="doPaipan">
@@ -1256,75 +1162,6 @@ onMounted(() => {
           </div>
         </div>
       </template>
-    </div>
-
-    <div class="info-card panel">
-      <h3>命盘信息</h3>
-      <div class="kv">
-        <div class="k">钟表时间</div>
-        <div>{{ solarText }}</div>
-        <div class="k">农历</div>
-        <div>
-          {{ pan.lunar.IMonthCn }}{{ pan.lunar.IDayCn }}
-          （{{ pan.lunar.lYear }}年 · {{ pan.lunar.Animal }} · {{ pan.lunar.astro }}）
-        </div>
-        <div class="k">四柱</div>
-        <div>
-          {{ pan.bzText.year }} {{ pan.bzText.month }} {{ pan.bzText.day }} {{ pan.bzText.hour }}
-        </div>
-        <div class="k">节气</div>
-        <div>{{ pan.lunar.isTerm ? pan.lunar.Term : '—' }}</div>
-        <div class="k">命宫 / 身宫</div>
-        <div>
-          {{ pan.mingGongName.trim() }}（{{ pan.gongs[pan.mingGong - 1].zhiName }}宫） /
-          {{ pan.shenGongName.trim() }}（{{ pan.gongs[pan.shenGong - 1].zhiName }}宫）
-        </div>
-        <div class="k">五行局</div>
-        <div>{{ pan.wuXingJuName }}（起运 {{ pan.wuXingJu }} 岁，{{ pan.shunXing ? '顺行' : '逆行' }}）</div>
-        <div class="k">命主 / 身主</div>
-        <div>{{ pan.mingZhu }} / {{ pan.shenZhu }}</div>
-        <div class="k">来因宫</div>
-        <div>
-          {{ pan.laiYinGongs.length
-            ? pan.laiYinGongs.map((i) => `${gongAt(i).nameM.trim()}（${gongAt(i).zhiName}）`).join('、')
-            : '—' }}
-        </div>
-        <div class="k">安星配置</div>
-        <div>{{ cfgSummary }}</div>
-      </div>
-
-      <h3 style="margin-top: 14px">生年四化</h3>
-      <div class="sihua-list">
-        <span v-for="(s, i) in pan.shengNianSiHua" :key="i">{{ s.star }} {{ s.type }}</span>
-      </div>
-
-      <h3 style="margin-top: 14px">宫干四化</h3>
-      <div class="kv">
-        <template v-for="g in pan.gongs" :key="g.idx">
-          <div class="k">{{ g.ganName }}{{ g.zhiName }}（{{ g.nameM }}）</div>
-          <div>
-            <span v-for="(s, i) in g.ganSiHua" :key="i" style="margin-right: 6px">
-              {{ s.star }}{{ s.type }}
-            </span>
-            <span v-if="(g.ziHuaXiangXin?.length || g.ziHua?.length)" class="zi">
-              自化 {{ zihuaText(g) === '—' ? '' : zihuaText(g) }}
-            </span>
-          </div>
-        </template>
-      </div>
-
-      <h3 style="margin-top: 14px">盘面文本</h3>
-      <div class="input-row">
-        <button class="btn tiny" type="button" @click="doExportBox">生成并导出</button>
-        <span v-if="exportInfo" class="quick-info">{{ exportInfo }}</span>
-      </div>
-      <textarea
-        v-if="exportText"
-        class="export-box"
-        readonly
-        :value="exportText"
-        rows="14"
-      ></textarea>
     </div>
   </div>
 

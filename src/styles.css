@@ -28,11 +28,6 @@ body {
   letter-spacing: 2px;
 }
 
-.app-header .sub {
-  font-size: 12px;
-  color: #8a7f6d;
-}
-
 .panel {
   background: #fffdf8;
   border: 1px solid #ddd3c0;
@@ -240,7 +235,7 @@ body {
 /* 盘面区：左盘面 + 右信息卡（显式栅格，位置确定，不受内容宽度影响） */
 .pan-wrap {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 332px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
@@ -682,18 +677,6 @@ body {
   font-size: 12px;
 }
 
-.info-card {
-  grid-column: 2;
-  grid-row: 2;
-  min-width: 0;
-}
-
-.info-card h3 {
-  font-size: 14px;
-  margin: 0 0 8px;
-  color: #6b4b2a;
-}
-
 .kv {
   display: grid;
   grid-template-columns: 88px 1fr;
@@ -703,21 +686,6 @@ body {
 
 .kv .k {
   color: #8a7f6d;
-}
-
-.sihua-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 6px;
-  font-size: 13px;
-}
-
-.sihua-list span {
-  border: 1px solid #d8b3a5;
-  border-radius: 3px;
-  padding: 1px 6px;
-  color: #a8452f;
 }
 
 .hint {
@@ -1208,19 +1176,6 @@ body {
   margin: 0 0 0 4px;
 }
 
-.export-box {
-  width: 100%;
-  margin-top: 8px;
-  padding: 8px;
-  border: 1px solid #cfc5b0;
-  border-radius: 4px;
-  background: #fffdf8;
-  font-family: 'SFMono-Regular', Consolas, monospace;
-  font-size: 11px;
-  line-height: 1.6;
-  resize: vertical;
-}
-
 /* ===== 响应式：平板 / 手机（信息卡移到盘面下方） ===== */
 @media (max-width: 1080px) {
   .pan-wrap {
@@ -1229,7 +1184,6 @@ body {
   }
 
   .pan-scroll,
-  .info-card,
   .xian-bar,
   .export-panel,
   .gong-detail {
