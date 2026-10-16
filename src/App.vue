@@ -923,7 +923,8 @@ onMounted(() => {
             @focus="onQuickFocus"
             @blur="onQuickBlur"
           />
-          <button class="btn tiny" type="button" @click="applyQuick">确定</button>
+          <!-- 不用 btn.tiny：tiny 是 22px 小号样式，和旁边 32px 的输入框放一行会显得矮一截、没对齐 -->
+          <button class="btn" type="button" @click="applyQuick">确定</button>
         </div>
       </div>
     </div>
