@@ -183,7 +183,8 @@ body {
 .app-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 10px 12px;
   margin-bottom: 16px;
 }
 
@@ -1714,3 +1715,339 @@ body {
     animation-duration: 0.01ms !important;
   }
 }
+
+
+/* ══════════════════════════════════════════════════════════════
+   四柱八字盘（自 horosa-web-app 迁移）
+   ──────────────────────────────────────────────────────────────
+   与紫微盘同源：.bz-board ↔ .pan-shell，.bz-pan ↔ .pan（纸），
+   .bz-zhu ↔ .gong（格），日柱 ↔ 命宫（朱砂）。四柱永远横向排列，
+   任何屏宽都不换行 —— 靠分档缩小 + 折叠次要信息适配窄屏。
+   未新增任何令牌，全部复用既有变量，四套皮肤自动生效。
+   ══════════════════════════════════════════════════════════════ */
+/* ── 八字盘：纸 ── */
+.bz-board{
+  margin-top:16px; display:grid; gap:1px;
+  background:var(--line); border:1px solid var(--line);
+  border-radius:var(--radius); padding:1px; box-shadow:var(--shadow);
+  transition:background .5s, border-color .5s;
+}
+[data-skin="xuanzhi"] .bz-board{ border-width:2px; border-color:var(--ink); padding:2px; background:var(--ink); }
+[data-skin="qingyu"] .bz-board{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), var(--shadow); }
+[data-skin="cyber"] .bz-board{
+  background:rgba(0,229,255,.1); border-color:rgba(0,229,255,.3);
+  box-shadow:0 0 44px -14px rgba(0,229,255,.55), inset 0 0 60px -30px rgba(0,229,255,.3);
+}
+
+.bz-pan{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1px; }
+
+/* ── 一柱：格 ──
+   硬约束：四柱（八个字）必须横向排列，任何屏宽都不换行。
+   因此每柱 min-width:0 + 子项 min-width:0，允许内容收缩而非撑破网格。 */
+.bz-zhu{
+  position:relative; background:var(--surface);
+  padding:10px 8px 9px; min-height:238px; min-width:0;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  font-family:var(--f-body); text-align:center;
+  transition:background .5s, box-shadow .25s;
+}
+.bz-zhu > *{ max-width:100%; min-width:0; }
+[data-skin="cyber"] .bz-zhu, [data-skin="night"] .bz-zhu{
+  background:linear-gradient(160deg, rgba(16,22,46,.9), rgba(10,14,32,.94));
+}
+[data-skin="night"] .bz-zhu{ background:linear-gradient(160deg, rgba(34,40,52,.92), rgba(26,31,42,.96)); }
+
+/* 日柱 = 命宫位：朱砂左条 + 暖底 */
+.bz-zhu.day{ background:var(--ming-bg); }
+[data-skin="xuanzhi"] .bz-zhu.day{ box-shadow:inset 3px 0 0 var(--accent); }
+[data-skin="qingyu"] .bz-zhu.day{ box-shadow:inset 3px 0 0 var(--accent); }
+[data-skin="cyber"] .bz-zhu.day{
+  box-shadow:inset 0 0 0 1px rgba(255,201,60,.5), inset 0 0 34px -16px rgba(255,201,60,.7);
+  background:linear-gradient(160deg, rgba(255,201,60,.13), rgba(12,16,36,.95));
+}
+[data-skin="night"] .bz-zhu.day{
+  box-shadow:inset 0 0 0 1px rgba(201,169,97,.36);
+  background:linear-gradient(160deg, rgba(201,169,97,.1), rgba(28,33,44,.96));
+}
+
+.bz-tag{
+  font-size:11px; letter-spacing:.22em; color:var(--ink-3);
+  padding:1px 8px; border-radius:2px; background:var(--bg-1);
+}
+.bz-zhu.day .bz-tag{ background:var(--accent); color:var(--surface); font-weight:700; }
+[data-skin="cyber"] .bz-zhu.day .bz-tag{ color:#04101E; }
+
+.bz-rel{ font-size:11.5px; letter-spacing:.1em; color:var(--accent-2); min-height:16px; }
+.bz-gan,.bz-zhi{
+  font-family:var(--f-head); font-weight:700; line-height:1.08;
+  font-size:clamp(28px,4.4vw,40px); color:var(--ink);
+}
+.bz-zhu.day .bz-gan{ color:var(--accent); }
+[data-skin="cyber"] .bz-zhu.day .bz-gan{ color:#FFC93C; text-shadow:0 0 18px rgba(255,201,60,.5); }
+.bz-zhi{ margin-top:-2px; }
+.bz-div{ width:26px; height:1px; background:var(--line); margin:4px 0 2px; }
+
+.bz-cang{ display:flex; flex-direction:column; gap:1px; font-size:11px; color:var(--ink-2); }
+.bz-cang i{ font-style:normal; color:var(--ink-3); margin-right:3px; font-size:10.5px; }
+
+.bz-ny{ font-size:11.5px; color:var(--h-ke); margin-top:1px; }
+.bz-ph{ font-size:11px; color:var(--ink-3); }
+.bz-xk{ font-size:10.5px; color:var(--ink-3); }
+
+.bz-gods{ display:flex; flex-wrap:wrap; gap:2px; justify-content:center; margin-top:auto; padding-top:6px; min-width:0; }
+.bz-god{
+  font-size:10px; line-height:1.5; padding:0 4px; border-radius:2px;
+  color:var(--ink-2); background:var(--bg-1);
+  white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis;
+}
+.bz-god.g{ color:var(--h-lu); box-shadow:inset 0 0 0 1px currentColor; background:none; }
+.bz-god.b{ color:var(--h-quan); box-shadow:inset 0 0 0 1px currentColor; background:none; }
+.bz-god.n{ color:var(--ink-3); background:none; box-shadow:inset 0 0 0 1px var(--line); }
+
+/* ── 中宫条：日主 + 五行 ── */
+.bz-mid{
+  background:var(--surface); padding:14px 16px;
+  display:grid; grid-template-columns:minmax(132px,160px) minmax(0,1fr); gap:14px 26px; align-items:start;
+}
+[data-skin="cyber"] .bz-mid, [data-skin="night"] .bz-mid{
+  background:linear-gradient(160deg, rgba(16,22,46,.92), rgba(10,14,32,.96));
+}
+[data-skin="night"] .bz-mid{ background:linear-gradient(160deg, rgba(34,40,52,.94), rgba(26,31,42,.97)); }
+
+.bz-dm{ display:flex; flex-direction:column; gap:3px; }
+.bz-dm-t{ font-size:11px; letter-spacing:.2em; color:var(--ink-3); }
+.bz-dm-v{ font-family:var(--f-head); font-size:25px; font-weight:700; color:var(--accent); line-height:1.1; }
+[data-skin="cyber"] .bz-dm-v{ color:#FFC93C; }
+.bz-dm-s{ font-size:11.5px; color:var(--ink-3); line-height:1.5; }
+
+/* 五行力量条：容器给明确行高，填充块必须 block 才吃得到 height:100% */
+.bz-wx{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+.bz-wxrow{ display:grid; grid-template-columns:20px minmax(0,1fr) 46px; align-items:center; gap:10px; }
+.bz-wxl{ font-family:var(--f-head); font-size:13px; color:var(--ink-2); text-align:center; }
+.bz-wxbar{
+  display:block; height:12px; border-radius:2px;
+  background:var(--bg-1); box-shadow:inset 0 0 0 1px var(--line);
+}
+.bz-wxf{ display:block; height:100%; border-radius:2px; transition:width .5s cubic-bezier(.4,0,.2,1); }
+.bz-wxv{ font-family:var(--f-body); font-size:11.5px; color:var(--ink-2); text-align:right; }
+/* 五行复用四化色系，四套皮肤自动适配，不新增令牌 */
+.wx-Wood{ background:var(--h-lu); }
+.wx-Fire{ background:var(--h-quan); }
+.wx-Earth{ background:var(--accent-2); }
+.wx-Metal{ background:var(--ink-3); }
+.wx-Water{ background:var(--h-ke); }
+/* 最旺的一行加重，一眼看出主导 */
+.bz-wxrow.max .bz-wxl{ font-weight:700; color:var(--ink); }
+.bz-wxrow.max .bz-wxv{ font-weight:700; color:var(--ink); }
+
+/* ── 格局 / 用神 ──
+   auto-fit 会让最后一张孤卡被拉满整行、宽窄不一；
+   这里用固定 3 列（每卡等宽），宁可留白也不出现「胖卡」。 */
+.bz-gj{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:14px; }
+.bz-gjc{
+  padding:11px 13px; background:var(--surface);
+  border:1px solid var(--line); border-radius:var(--radius);
+  display:flex; flex-direction:column;
+}
+.bz-gjt{
+  font-family:var(--f-body); font-size:12.5px; font-weight:700; letter-spacing:.1em;
+  color:var(--ink); margin-bottom:7px; display:flex; align-items:baseline; gap:7px; flex-wrap:wrap;
+}
+.bz-gjt em{ font-style:normal; font-size:11px; font-weight:400; color:var(--ink-3); letter-spacing:.04em; }
+.bz-gjb{ font-size:12px; line-height:1.8; color:var(--ink-2); }
+.bz-gjb b{ color:var(--ink); font-weight:600; }
+.bz-gjb .row{ display:flex; gap:6px; align-items:baseline; }
+.bz-gjb .row > span:first-child{ flex:0 0 34px; color:var(--ink-3); }
+.bz-xi{ color:var(--h-lu); font-weight:600; }
+.bz-ji2{ color:var(--h-quan); font-weight:600; }
+.bz-note{ font-size:11px; color:var(--ink-3); margin-top:5px; line-height:1.6; }
+
+/* ── 大运 / 流年条（对应紫微限流速查表）── */
+.bz-xian{ margin-top:16px; }
+.bz-xrow{ display:flex; align-items:stretch; gap:6px; }
+.bz-xtitle{
+  flex:0 0 34px; display:flex; align-items:center; justify-content:center;
+  font-family:var(--f-body); font-size:12px; font-weight:700; letter-spacing:.14em;
+  color:var(--accent); background:var(--bg-1); border-radius:var(--radius);
+}
+.bz-xcells{ flex:1 1 auto; min-width:0; display:flex; gap:2px; padding:3px 0; overflow-x:auto; }
+.bz-xcell{
+  flex:1 1 0; min-width:52px; display:flex; flex-direction:column; align-items:center; gap:1px;
+  padding:4px 3px; cursor:pointer;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  font-family:var(--f-body); font-size:11.5px; color:var(--ink-2);
+  transition:border-color .18s, background .18s, color .18s;
+}
+.bz-xcell:hover{ border-color:var(--accent); }
+.bz-xcell .l2{ font-size:10px; color:var(--ink-3); }
+.bz-xcell.on{
+  background:var(--ming-bg); border-color:var(--accent); color:var(--accent); font-weight:700;
+}
+.bz-xcell.on .l2{ color:var(--accent); }
+.bz-xyears{ display:grid; grid-template-columns:repeat(auto-fill,minmax(74px,1fr)); gap:4px; margin-top:8px; }
+.bz-ycell{
+  padding:4px 3px; text-align:center; cursor:pointer;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  font-family:var(--f-body); font-size:11px; color:var(--ink-2);
+  transition:border-color .18s, background .18s;
+}
+.bz-ycell:hover{ border-color:var(--accent); }
+.bz-ycell.on{ background:var(--sel-bg); border-color:var(--accent); color:var(--accent); font-weight:700; }
+.bz-ycell .y2{ display:block; font-size:10px; color:var(--ink-3); }
+.bz-ycell.on .y2{ color:var(--accent); }
+
+/* ── 盘头 ── */
+.bz-head{ display:flex; flex-wrap:wrap; gap:6px 16px; align-items:baseline; margin-top:16px;
+  padding:10px 14px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); }
+.bz-hn{ font-family:var(--f-head); font-size:17px; font-weight:700; color:var(--ink); letter-spacing:.06em; }
+.bz-hi{ font-size:12px; color:var(--ink-3); }
+.bz-hi b{ color:var(--ink-2); font-weight:600; }
+
+/* ══ 八字 · 响应式 ══
+   硬约束：八个字（四柱干支）**必须横向四柱排列**，手机也一样。
+   所以不做「拆列/换行」那套，而是整体等比缩小 + 分档精简：
+     桌面   → 全信息（藏干/纳音/星运/空亡/神煞）
+     ≤760  → 缩小字级与内边距，四柱仍横排
+     ≤520  → 干支再小一档，次要信息（星运/空亡）折叠
+     ≤400  → 只留「柱名 + 干支 + 藏干 + 神煞」，字最小但绝不换行
+   四柱等宽用 minmax(0,1fr) + min-width:0，子元素允许收缩不撑破。 */
+@media (max-width:1100px){
+  .bz-gj{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+/* ── 平板/大手机：四柱横排，收一档 ── */
+@media (max-width:760px){
+  .modeswitch{ padding:2px; }
+  .mb{ padding:6px 9px; font-size:12.5px; letter-spacing:.05em; min-width:4.9em; }
+  /* 手机内边距收到 2px：滑块左让 2px，--mb-x 由 JS 按实测几何重算 */
+  .mb-ink{ top:2px; bottom:2px; left:2px; }
+  .bz-head{ gap:4px 12px; padding:9px 11px; margin-top:12px; }
+  .bz-hn{ font-size:15px; }
+  .bz-board{ margin-top:11px; }
+
+  /* 四柱：**保持 4 列横排** */
+  .bz-pan{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .bz-zhu{ min-height:0; padding:8px 4px 7px; gap:2px; }
+  .bz-gan,.bz-zhi{ font-size:clamp(22px,6.4vw,30px); }
+  .bz-cang{ font-size:10px; }
+  .bz-ny{ font-size:10px; }
+  .bz-ph,.bz-xk{ font-size:9.5px; }
+  .bz-rel{ font-size:10.5px; min-height:13px; }
+  .bz-tag{ letter-spacing:.1em; padding:1px 5px; font-size:10px; }
+  .bz-god{ font-size:9px; padding:0 3px; }
+
+  /* 中宫条：日主与五行分两段，五行条给足宽度才看得出比例 */
+  .bz-mid{ grid-template-columns:1fr; gap:11px; padding:11px 12px; }
+  .bz-dm{ flex-direction:row; align-items:baseline; gap:9px; flex-wrap:wrap; }
+  .bz-dm-t{ display:none; }
+  .bz-dm-v{ font-size:22px; }
+  .bz-dm-s{ font-size:11px; }
+  .bz-wxrow{ grid-template-columns:19px minmax(0,1fr) 44px; gap:8px; }
+
+  /* 格局卡：单列，`.row` 的固定 34px 标签列太宽，收到 30px */
+  .bz-gj{ grid-template-columns:1fr; gap:9px; margin-top:11px; }
+  .bz-gjc{ padding:10px 12px; }
+  .bz-gjb{ font-size:11.5px; line-height:1.75; }
+  .bz-gjb .row > span:first-child{ flex:0 0 30px; }
+  .bz-note{ font-size:10.5px; }
+
+  /* 大运/流年 */
+  .bz-xian{ margin-top:12px; }
+  .bz-xtitle{ flex:0 0 30px; font-size:11px; letter-spacing:.08em; }
+  .bz-xcells{ gap:2px; }
+  .bz-xcell{ min-width:44px; padding:4px 2px; font-size:11px; }
+  .bz-xcell .l2{ font-size:9.5px; }
+  .bz-xyears{ grid-template-columns:repeat(auto-fill,minmax(60px,1fr)); gap:4px; }
+  .bz-ycell{ font-size:10.5px; }
+  .bz-ycell .y2{ font-size:9.5px; }
+}
+
+/* ── 窄手机 400–520：四柱仍横排，藏干改紧凑单行 ── */
+@media (max-width:520px){
+  .bz-board{ padding:0; }
+  [data-skin="xuanzhi"] .bz-board{ padding:1px; }
+  .bz-zhu{ padding:7px 2px 6px; gap:1px; }
+  .bz-gan,.bz-zhi{ font-size:clamp(20px,6.4vw,26px); }
+  .bz-ny,.bz-ph,.bz-xk{ display:none; }   /* 折叠次要信息，把宽度让给干支与藏干 */
+  /* 藏干：每行「干+十神」压成一行，字号收到 9px，允许收缩 */
+  .bz-cang{ font-size:9px; gap:0; line-height:1.5; width:100%; }
+  .bz-cang span{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bz-cang i{ font-size:8.5px; margin-right:1px; }
+  .bz-rel{ font-size:10px; letter-spacing:0; }
+  .bz-tag{ font-size:9px; padding:1px 4px; letter-spacing:.02em; }
+  .bz-div{ width:16px; margin:3px 0 1px; }
+  .bz-gods{ gap:1px; padding-top:4px; }
+  .bz-god{ font-size:8px; padding:0 2px; }
+}
+
+/* ── 极窄 ≤400：只留 柱名+干支+藏干+神煞 ── */
+@media (max-width:400px){
+  .bz-zhu{ padding:6px 1px 5px; }
+  .bz-gan,.bz-zhi{ font-size:clamp(18px,6.2vw,23px); }
+  .bz-cang{ font-size:8.5px; }
+  .bz-cang i{ font-size:8px; }
+  .bz-rel{ font-size:9.5px; }
+  .bz-tag{ font-size:8.5px; padding:0 3px; }
+  .bz-god{ font-size:7.5px; padding:0 2px; }
+  .bz-wxrow{ grid-template-columns:17px minmax(0,1fr) 40px; gap:6px; }
+  .bz-wxl{ font-size:12px; }
+  .bz-wxv{ font-size:10.5px; }
+}
+@media (prefers-reduced-motion:reduce){
+  .mb-ink, .bz-wxf{ transition:none; }
+}
+
+/* ── 术数切换器（紫微 ⇄ 八字）── */
+/* ── 术数切换 ── */
+/* 两个按钮等宽（按最长文案「紫微斗数」定最小宽度），滑块用 --mb-i 在 0/1 间平移。
+   等宽是滑块能纯 CSS 定位的前提：否则两格宽度不同，50% 就对不上。 */
+.modeswitch{
+  display:inline-flex; position:relative; gap:2px; padding:3px; flex:none;
+  background:var(--bg-1); border:1px solid var(--line);
+  border-radius:var(--radius); box-shadow:var(--shadow);
+  transition:background .5s, border-color .5s;
+}
+.mb{
+  position:relative; z-index:2; appearance:none; border:0; background:none;
+  flex:1 1 0; min-width:5.6em;
+  padding:7px 12px; cursor:pointer; white-space:nowrap; text-align:center;
+  font-family:var(--f-body); font-size:13.5px; font-weight:600; letter-spacing:.1em;
+  color:var(--ink-3); transition:color .22s ease;
+}
+.mb:hover{ color:var(--ink); }
+.mb.on{ color:var(--surface); }
+[data-skin="cyber"] .mb.on{ color:#04101E; }
+/* 滑块：left 由 --mb-x 直接给出（0 / 1 时分别落在两格左缘）。
+   不用 calc(数字 * 百分比) —— 无单位数乘百分比在该 Chrome 下不解析。 */
+.mb-ink{
+  position:absolute; top:3px; bottom:3px; left:3px; z-index:1;
+  width:var(--mb-w, calc((100% - 8px) / 2));
+  transform:translateX(var(--mb-x, 0px));
+  background:var(--accent); border-radius:var(--radius);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+[data-skin="cyber"] .mb-ink{ box-shadow:0 0 18px -4px var(--accent); }
+
+/* ── 八字盘容器与补充（Vue 组件用） ── */
+.bz-root{ display:block; }
+
+.bz-xhd{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  margin-bottom:9px;
+}
+.bz-xhd h3{
+  margin:0; font-family:var(--f-head); font-size:15px; font-weight:700;
+  color:var(--ink); letter-spacing:.1em;
+}
+.bz-chip{
+  font-family:var(--f-body); font-size:11px; line-height:1.6;
+  padding:1px 8px; border-radius:var(--radius);
+  color:var(--ink-3); background:var(--bg-1); box-shadow:inset 0 0 0 1px var(--line);
+}
+.bz-lnrow{ margin-top:8px; }
+.bz-xsum{
+  display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px;
+  padding-top:9px; border-top:1px dashed var(--line);
+}
+.bz-sm{ font-family:var(--f-body); font-size:11.5px; color:var(--ink-2); }
+.bz-sm b{ color:var(--accent); font-weight:700; }

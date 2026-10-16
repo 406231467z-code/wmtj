@@ -15,7 +15,10 @@ import {
   loadDraft, saveDraft, pickForm, FORM_KEYS
 } from './ziwei/store.js'
 import * as D from './ziwei/data.js'
+import buildLocalBaziResult from './bazi/utils/baziLunarLocal.js'
+import { buildBaziMarkdown } from './bazi/export.js'
 import ZiweiPan from './components/ZiweiPan.vue'
+import BaziPan from './components/BaziPan.vue'
 import XianBar from './components/XianBar.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import ChartLibrary from './components/ChartLibrary.vue'
@@ -41,6 +44,130 @@ const error = ref('')
 const pan = ref(null)
 const panRef = ref(null)
 const sel = ref(0)
+
+/* ---------------- 术数模式：紫微 / 八字（同一份出生资料，选择后记忆） ---------------- */
+
+const MODES = [
+  { k: 'ziwei', t: '紫微斗数' },
+  { k: 'bazi', t: '八字' }
+]
+const MODE_KEY = 'tianjige_mode'
+
+function readMode() {
+  try {
+    const v = localStorage.getItem(MODE_KEY)
+    if (v && MODES.some((m) => m.k === v)) return v
+  } catch (e) {
+    /* 读不到就用默认模式 */
+  }
+  return 'ziwei'
+}
+
+const mode = ref(readMode())
+watch(
+  mode,
+  (v) => {
+    try {
+      localStorage.setItem(MODE_KEY, v)
+    } catch (e) {
+      /* 写不进去只影响下次打开 */
+    }
+    syncMbInk()
+  },
+  { immediate: true }
+)
+
+/** 术数切换器的滑块定位：按当前选中按钮的实测几何写 --mb-x / --mb-w */
+const modeSwitchRef = ref(null)
+const mbOffset = ref(0)
+const mbWidth = ref(0)
+
+function syncMbInk() {
+  const el = modeSwitchRef.value
+  if (!el) return
+  const btns = el.querySelectorAll('.mb')
+  const i = MODES.findIndex((m) => m.k === mode.value)
+  const btn = btns[i]
+  if (!btn) return
+  mbOffset.value = btn.offsetLeft - el.clientLeft - 3
+  mbWidth.value = btn.offsetWidth
+}
+
+const mbStyle = computed(() => ({
+  '--mb-x': mbOffset.value + 'px',
+  '--mb-w': mbWidth.value ? mbWidth.value + 'px' : 'calc((100% - 8px) / 2)'
+}))
+
+/** 八字盘：与紫微共用 form，切到八字时现算 */
+const baziRaw = ref(null)
+const baziError = ref('')
+
+/** 八字当前选择层级：0 本命 / 1 大运 / 2 流年 / 3 流月 */
+const bzSel = reactive({ depth: 0, dyIndex: 0, lnIndex: 0, lyIndex: 0 })
+
+/** 把紫微表单折算成八字引擎参数（引擎与紫微各自独立算，互不影响） */
+function baziParams() {
+  const p = readForm()
+  return {
+    date: `${p.year}-${p2(p.month)}-${p2(p.day)}`,
+    time: `${p2(p.hour)}:${p2(p.minute)}:00`,
+    zone: 8,
+    ad: 1,
+    lon: p.jd,
+    lat: 30,
+    gender: p.sex === 2 ? 0 : 1,
+    // 八字不认 checkbox，只认 timeAlg 档：真太阳时开 → 0（经度差 + 均时差）
+    timeAlg: p.trueSolarTime ? 0 : 3,
+    after23NewDay: 1,
+    // 点选流年后展开该年流月（引擎默认只展开「当前公历年所在大运」）
+    forceMonths: bzSel.depth >= 2 ? { dyIndex: bzSel.dyIndex, lnIndex: bzSel.lnIndex } : null
+  }
+}
+
+/** 只重算八字盘，不动当前选择（点选流年后需要展开该年流月时用） */
+function refreshBazi() {
+  try {
+    baziRaw.value = buildLocalBaziResult(baziParams())
+    baziError.value = ''
+  } catch (e) {
+    baziError.value = e.message
+    baziRaw.value = null
+  }
+}
+
+/** 大运 / 流年 / 流月点选：层级联动（选大运清流年流月，选流年清流月） */
+function pickDayun(i) {
+  if (bzSel.depth === 1 && bzSel.dyIndex === i) {
+    bzSel.depth = 0
+    return
+  }
+  bzSel.depth = 1
+  bzSel.dyIndex = i
+  bzSel.lnIndex = 0
+  bzSel.lyIndex = 0
+}
+
+function pickLiunian(i) {
+  if (bzSel.depth === 2 && bzSel.lnIndex === i) {
+    bzSel.depth = 1
+    bzSel.lyIndex = 0
+    return
+  }
+  bzSel.depth = 2
+  bzSel.lnIndex = i
+  bzSel.lyIndex = 0
+  // 该年流月此前可能是 null（引擎只对当前公历年所在大运预计算），补算一次
+  refreshBazi()
+}
+
+function pickLiuyue(i) {
+  if (bzSel.depth === 3 && bzSel.lyIndex === i) {
+    bzSel.depth = 2
+    return
+  }
+  bzSel.depth = 3
+  bzSel.lyIndex = i
+}
 
 /* ---------------- 界面风格（4 套皮肤，选择后记忆） ---------------- */
 
@@ -240,6 +367,12 @@ const XIAN_LABEL = {
   liuri: '流日', liushi: '流时', xiaoxian: '小限'
 }
 
+/** 盘级 → 文件名用词（导出命名用，避免拼音/中文混排） */
+const XIAN_LABEL_EN = {
+  benming: '本命', daxian: '大限', liunian: '流年', liuyue: '流月',
+  liuri: '流日', liushi: '流时', xiaoxian: '小限'
+}
+
 /**
  * 盘面类型清单 —— 模板里 view 切换按钮、导出标题、URL 参数校验共用。
  * k = key（写入 URL 的 ?view=），t = 中文标题，d = 可选描述
@@ -347,7 +480,12 @@ function validate(p) {
   return ''
 }
 
-/** 排盘主入口：点击「开始排盘」或回车触发。只算不存，存盘要点「保存命盘」 */
+/**
+ * 排盘主入口：点击「开始排盘」或回车触发。只算不存，存盘要点「保存命盘」
+ *
+ * 紫微与八字共用同一份出生资料：这里两盘一起算，
+ * 顶部切换术数时立即出盘，不用重算也不用重新点排盘。
+ */
 function doPaipan() {
   const p = readForm()
   const msg = validate(p)
@@ -371,6 +509,18 @@ function doPaipan() {
   } catch (e) {
     error.value = e.message
     pan.value = null
+  }
+  // 八字独立算：紫微失败也不影响八字出盘（反之亦然）
+  try {
+    baziRaw.value = buildLocalBaziResult(baziParams())
+    baziError.value = ''
+    bzSel.depth = 0
+    bzSel.dyIndex = 0
+    bzSel.lnIndex = 0
+    bzSel.lyIndex = 0
+  } catch (e) {
+    baziError.value = e.message
+    baziRaw.value = null
   }
 }
 
@@ -446,7 +596,13 @@ function newChart() {
   quickInfo.value = ''
   error.value = ''
   pan.value = null
+  baziRaw.value = null
+  baziError.value = ''
   sel.value = 0
+  bzSel.depth = 0
+  bzSel.dyIndex = 0
+  bzSel.lnIndex = 0
+  bzSel.lyIndex = 0
   saveDraft(readForm(), '')
 }
 
@@ -518,8 +674,25 @@ const feiXingMarks = computed(() =>
 
 /* ---------------- 复制内容（给 AI） ---------------- */
 
+/**
+ * 八字 AI 文本：本命四柱恒定给出，再按当前选择追加 大运 / 流年 / 流月 详情。
+ * 选到大运就带「原来 + 大运信息」，选到流年再叠流年，选到流月再叠流月。
+ */
+const baziAiText = computed(() => {
+  if (!baziRaw.value) return ''
+  try {
+    return buildBaziMarkdown({
+      pan: baziRaw.value,
+      form: { ...form },
+      sel: { ...bzSel }
+    })
+  } catch (e) {
+    return `（导出失败：${e.message}）`
+  }
+})
+
 /** 盘头 + 十二宫总览 + 逐宫点选（12 × 12），随当前限盘自动重算 */
-const aiText = computed(() => {
+const ziweiAiText = computed(() => {
   if (!pan.value) return ''
   try {
     return buildMarkdown({
@@ -534,6 +707,9 @@ const aiText = computed(() => {
     return `（导出失败：${e.message}）`
   }
 })
+
+/** 当前术数模式下的导出文本 */
+const aiText = computed(() => (mode.value === 'bazi' ? baziAiText.value : ziweiAiText.value))
 
 const aiChars = computed(() => aiText.value.length)
 const copied = ref(false)
@@ -714,6 +890,67 @@ async function downloadDaXianDoc() {
   }
 }
 
+/* ---------------- 导出下载：当前层级 TXT ---------------- */
+
+const aiDocInfo = ref('')
+const aiDocBusy = ref(false)
+
+/**
+ * 文件名：张三_八字_第4大运丙戌_2029己酉_清明丁卯.txt
+ * 分层拼接，选到哪一层就带哪一层，用户一眼看出这份文本覆盖到哪。
+ */
+function aiDocName() {
+  const nm = String(form.name || '').trim().replace(/[\\/:*?"<>|]/g, '') || '命盘'
+  if (mode.value !== 'bazi') {
+    return `${nm}_紫微斗数_${XIAN_LABEL_EN[view.value] || view.value}.txt`
+  }
+  const b = baziRaw.value?.bazi
+  if (!b) return `${nm}_八字.txt`
+  const seg = ['八字']
+  const dy = (b.direction || [])[bzSel.dyIndex]
+  if (bzSel.depth >= 1 && dy) {
+    seg.push(`第${bzSel.dyIndex + 1}大运${dy.mainDirect?.ganzi || ''}`)
+  }
+  const ln = dy?.subDirect?.[bzSel.lnIndex]
+  if (bzSel.depth >= 2 && ln) {
+    seg.push(`${ln.year}${ln.ganzi || ''}`)
+  }
+  const ly = ln?.flowMonths?.[bzSel.lyIndex]
+  if (bzSel.depth >= 3 && ly) {
+    seg.push(`${ly.term || ''}${ly.ganzi || ''}`)
+  }
+  return `${nm}_${seg.join('_')}.txt`
+}
+
+/** 下载当前层级的 AI 文本（紫微 / 八字同一入口） */
+async function downloadAiDoc() {
+  const text = aiText.value
+  if (!text || aiDocBusy.value) return
+  aiDocBusy.value = true
+  aiDocInfo.value = '正在生成…'
+  try {
+    await new Promise((r) => setTimeout(r, 30))
+    // 加 BOM，Windows 记事本打开不乱码
+    const blob = new Blob(['﻿' + text], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = aiDocName()
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 2000)
+    aiDocInfo.value = `已下载「${a.download}」　${text.length} 字`
+    setTimeout(() => {
+      if (aiDocInfo.value.startsWith('已下载')) aiDocInfo.value = ''
+    }, 6000)
+  } catch (e) {
+    aiDocInfo.value = `生成失败：${e.message}`
+  } finally {
+    aiDocBusy.value = false
+  }
+}
+
 /** 快捷输入：支持 8/10/12 位（年月日 / 年月日时 / 年月日时分） */
 function applyQuick() {
   const v = (quick.value || '').replace(/\D/g, '')
@@ -817,12 +1054,41 @@ onMounted(() => {
   init()
   // ref 挂载后再应用，否则 panRef 为空
   applyUrlParams()
+  // 切换器滑块要在布局稳定后量一次；字体加载完 / 旋转屏幕时再量
+  requestAnimationFrame(syncMbInk)
+  window.addEventListener('resize', syncMbInk)
+  if (document.fonts?.ready) document.fonts.ready.then(syncMbInk).catch(() => {})
 })
 </script>
 
 <template>
   <div class="app-header">
-    <h1>天机阁 · 紫微斗数排盘</h1>
+    <h1>天机阁 · {{ mode === 'bazi' ? '四柱八字排盘' : '紫微斗数排盘' }}</h1>
+
+    <!-- 术数切换：紫微斗数 / 八字。同一份出生资料，两份盘一次算好，切换即刻出盘。
+         滑块位置由 modeSwitchRef 实测按钮几何后写入 --mb-x / --mb-w（纯 CSS calc 在
+         无单位数乘百分比时不解析，实测像素最稳，换皮肤/换字体也不会错位）。 -->
+    <div
+      ref="modeSwitchRef"
+      class="modeswitch"
+      :style="mbStyle"
+      role="tablist"
+      aria-label="术数"
+    >
+      <button
+        v-for="m in MODES"
+        :key="m.k"
+        class="mb"
+        role="tab"
+        type="button"
+        :class="{ on: mode === m.k }"
+        :aria-selected="mode === m.k ? 'true' : 'false'"
+        @click="mode = m.k"
+      >
+        {{ m.t }}
+      </button>
+      <span class="mb-ink"></span>
+    </div>
 
     <!-- 风格切换：右上角小胶囊。原生 select 透明覆盖在胶囊上，
          手机上直接调起系统下拉，不占地方。选择写入 localStorage，下次打开默认沿用。 -->
@@ -965,6 +1231,62 @@ onMounted(() => {
     @new="newChart"
   />
 
+  <!-- ═══════════════ 八字盘 ═══════════════ -->
+  <template v-if="mode === 'bazi'">
+    <div v-if="!baziRaw" class="panel empty-state">
+      <p>
+        八字与紫微共用上面这份出生资料：填好<b>姓名</b>与<b>出生时间</b>，点<b>「开始排盘」</b>即可。<br />
+        排完后在顶部切到<b>八字</b>，四柱、五行、格局用神、大运流年一次给全。
+      </p>
+      <p v-if="baziError" class="error">{{ baziError }}</p>
+    </div>
+
+    <template v-else>
+      <div class="pan-wrap">
+        <BaziPan
+          :pan="baziRaw"
+          :name="form.name"
+          :depth="bzSel.depth"
+          :dy-index="bzSel.dyIndex"
+          :ln-index="bzSel.lnIndex"
+          :ly-index="bzSel.lyIndex"
+          @pick-dayun="pickDayun"
+          @pick-liunian="pickLiunian"
+          @pick-liuyue="pickLiuyue"
+        />
+      </div>
+
+      <!-- 复制内容（给 AI）：本命四柱恒定 + 所选层级（大运 / 流年 / 流月）逐层追加 -->
+      <div class="panel export-panel">
+        <h3>
+          <span class="ex-title">复制内容（给 AI）</span>
+          <span class="ex-meta">Markdown · 约 {{ aiChars }} 字</span>
+          <button class="btn tiny primary" type="button" @click="copyAiText">
+            {{ copied ? '已复制 ✓' : copyFail ? '复制失败' : '复制全部' }}
+          </button>
+          <span v-if="copyFail" class="ex-warn">浏览器拒绝了剪贴板访问，请展开下方文本框手动全选复制</span>
+          <button
+            class="btn tiny dl"
+            type="button"
+            :disabled="aiDocBusy"
+            @click="downloadAiDoc"
+          >
+            {{ aiDocBusy ? '正在生成…' : '下载 TXT' }}
+          </button>
+          <span v-if="aiDocInfo" class="ex-info">{{ aiDocInfo }}</span>
+        </h3>
+        <p class="ex-tip">
+          恒定给出<b>本命四柱</b>（含五行力量、格局用神、干支关系），再按当前选择逐层追加：
+          选中<b>大运</b>带上该运干支十神神煞；再选<b>流年</b>叠加该年；再选<b>流月</b>叠加该月。
+          没选就只给本命盘。切换选择后文本自动重算，直接复制投喂 AI 即可。
+        </p>
+        <textarea class="ex-box" readonly :value="aiText" rows="12"></textarea>
+      </div>
+    </template>
+  </template>
+
+  <!-- ═══════════════ 紫微盘 ═══════════════ -->
+  <template v-else>
   <div v-if="!pan" class="panel empty-state">
     <p>
       填一下<b>姓名</b>（出生时间已预填 1990-06-15 12:00，改成实际的即可），然后点<b>「开始排盘」</b>。<br />
@@ -1230,4 +1552,5 @@ onMounted(() => {
   </div>
 
   <div v-else class="panel empty-tip">请填写出生资料后点击「开始排盘」</div>
+  </template>
 </template>
