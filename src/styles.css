@@ -407,6 +407,8 @@ body {
   cursor: pointer;
   font-family: inherit;
   font-size: 14px;
+  /* 按钮文字永不折行：被同排元素挤窄时，两字标签会换行竖排（"确"在上"定"在下） */
+  white-space: nowrap;
   transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 }
 
@@ -1094,8 +1096,19 @@ body {
 
 .input-row {
   display: flex;
+  flex-wrap: nowrap;
   gap: 6px;
   align-items: center;
+}
+
+/* 输入框吸收全部余量并可压缩，按钮保持自身宽度——否则按钮会被挤窄到装不下标签 */
+.input-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.input-row .btn {
+  flex: 0 0 auto;
 }
 
 .quick-info {
