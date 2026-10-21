@@ -2505,3 +2505,227 @@ body {
     overflow-x: auto;
   }
 }
+
+/* ==========================================================================
+   铁板神数（.tb-*）
+   与河洛同源的设计令牌，四套皮肤自动跟随。
+   结构移植自 horosa 的 ZhengChuanMain.js renderTieban()（原 antd Card/Table）。
+   ========================================================================== */
+.tb {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.tb-empty {
+  padding: 24px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink-3);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ---------- 概况条 ---------- */
+.tb-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.tb-kv b {
+  margin-left: 4px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.tb-ask {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.tb-ask select {
+  height: 26px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.tb-hint {
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+
+/* ---------- 卡片 ---------- */
+.tb-card {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+.tb-card h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.tb-row {
+  display: flex;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--line-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.tb-row:last-child {
+  border-bottom: 0;
+}
+
+.tb-row > span {
+  flex: 0 0 140px;
+  color: var(--ink-3);
+}
+
+.tb-row > strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 500;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+/* ---------- 表格 ---------- */
+.tb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tb-table th {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-3);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.tb-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink);
+  vertical-align: top;
+}
+
+.tb-step {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.tb-out {
+  white-space: nowrap;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tb-dim {
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.tb-ln td:nth-child(1),
+.tb-ln td:nth-child(2),
+.tb-ln td:nth-child(3),
+.tb-ln td:nth-child(4) {
+  white-space: nowrap;
+}
+
+/* ---------- 条文 ---------- */
+.tb-verse {
+  display: flex;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--line-soft);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.tb-verse:last-child {
+  border-bottom: 0;
+}
+
+.tb-tag {
+  flex: 0 0 96px;
+  align-self: flex-start;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink-3);
+  font-size: 11.5px;
+  line-height: 1.9;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.tb-tag b {
+  margin-left: 4px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tb-verse-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.tb-none,
+.tb-note {
+  color: var(--ink-3);
+  font-size: 12.5px;
+  line-height: 1.8;
+}
+
+@media (max-width: 560px) {
+  .tb-row > span {
+    flex-basis: 104px;
+  }
+
+  .tb-verse {
+    display: block;
+  }
+
+  .tb-tag {
+    display: inline-block;
+    margin-bottom: 3px;
+  }
+
+  /* 窄屏让表格自己横向滚 */
+  .tb-table {
+    display: block;
+    overflow-x: auto;
+  }
+}

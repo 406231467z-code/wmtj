@@ -20,6 +20,7 @@ import { buildBaziMarkdown } from './bazi/export.js'
 import ZiweiPan from './components/ZiweiPan.vue'
 import BaziPan from './components/BaziPan.vue'
 import HeLuoPan from './components/HeLuoPan.vue'
+import TieBanPan from './components/TieBanPan.vue'
 import XianBar from './components/XianBar.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import ChartLibrary from './components/ChartLibrary.vue'
@@ -51,12 +52,14 @@ const sel = ref(0)
 const MODES = [
   { k: 'ziwei', t: '紫微斗数' },
   { k: 'bazi', t: '八字' },
-  { k: 'heluo', t: '河洛理数' }
+  { k: 'heluo', t: '河洛理数' },
+  { k: 'tieban', t: '铁板神数' }
 ]
 const MODE_TITLE = {
   ziwei: '紫微斗数排盘',
   bazi: '四柱八字排盘',
   heluo: '河洛理数排盘',
+  tieban: '铁板神数排盘',
 }
 const MODE_KEY = 'tianjige_mode'
 
@@ -1577,5 +1580,16 @@ onMounted(() => {
       </p>
     </div>
     <HeLuoPan v-else :pan="pan" :bazi="baziRaw" :sex="form.sex" />
+  </template>
+
+  <!-- ═══════════════ 铁板神数 ═══════════════ -->
+  <template v-else-if="mode === 'tieban'">
+    <div v-if="!pan" class="panel empty-state">
+      <p>
+        填一下<b>姓名</b>并点<b>「开始排盘」</b>。铁板神数与紫微共用同一份出生资料，
+        起数需要四柱干支与农历月日，所以先排盘再切过来即可。
+      </p>
+    </div>
+    <TieBanPan v-else :pan="pan" :bazi="baziRaw" :sex="form.sex" />
   </template>
 </template>
