@@ -19,6 +19,7 @@ import buildLocalBaziResult from './bazi/utils/baziLunarLocal.js'
 import { buildBaziMarkdown } from './bazi/export.js'
 import ZiweiPan from './components/ZiweiPan.vue'
 import BaziPan from './components/BaziPan.vue'
+import HeLuoPan from './components/HeLuoPan.vue'
 import XianBar from './components/XianBar.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import ChartLibrary from './components/ChartLibrary.vue'
@@ -49,8 +50,14 @@ const sel = ref(0)
 
 const MODES = [
   { k: 'ziwei', t: '紫微斗数' },
-  { k: 'bazi', t: '八字' }
+  { k: 'bazi', t: '八字' },
+  { k: 'heluo', t: '河洛理数' }
 ]
+const MODE_TITLE = {
+  ziwei: '紫微斗数排盘',
+  bazi: '四柱八字排盘',
+  heluo: '河洛理数排盘',
+}
 const MODE_KEY = 'tianjige_mode'
 
 function readMode() {
@@ -64,18 +71,6 @@ function readMode() {
 }
 
 const mode = ref(readMode())
-watch(
-  mode,
-  (v) => {
-    try {
-      localStorage.setItem(MODE_KEY, v)
-    } catch (e) {
-      /* 写不进去只影响下次打开 */
-    }
-    syncMbInk()
-  },
-  { immediate: true }
-)
 
 /** 术数切换器的滑块定位：按当前选中按钮的实测几何写 --mb-x / --mb-w */
 const modeSwitchRef = ref(null)
@@ -97,6 +92,23 @@ const mbStyle = computed(() => ({
   '--mb-x': mbOffset.value + 'px',
   '--mb-w': mbWidth.value ? mbWidth.value + 'px' : 'calc((100% - 8px) / 2)'
 }))
+
+// 注意：这个 watch 必须排在 syncMbInk 定义之后。
+// immediate 回调在声明处同步执行，若定义在前会踩 TDZ
+// （ReferenceError: Cannot access 'modeSwitchRef' before initialization），
+// 整个 setup 抛错 → 页面全白。
+watch(
+  mode,
+  (v) => {
+    try {
+      localStorage.setItem(MODE_KEY, v)
+    } catch (e) {
+      /* 写不进去只影响下次打开 */
+    }
+    syncMbInk()
+  },
+  { immediate: true }
+)
 
 /** 八字盘：与紫微共用 form，切到八字时现算 */
 const baziRaw = ref(null)
@@ -250,6 +262,8 @@ const showGroups = reactive({
 
 /** 限盘：盘面类型 + 大限 / 流年 / 流月 / 流日 / 流时序号 */
 const view = ref('benming')
+
+
 const dxIndex = ref(1)
 const lnIndex = ref(1)
 const lyIndex = ref(1)
@@ -1063,7 +1077,7 @@ onMounted(() => {
 
 <template>
   <div class="app-header">
-    <h1>天机阁 · {{ mode === 'bazi' ? '四柱八字排盘' : '紫微斗数排盘' }}</h1>
+    <h1>天机阁 · {{ MODE_TITLE[mode] }}</h1>
 
     <!-- 术数切换：紫微斗数 / 八字。同一份出生资料，两份盘一次算好，切换即刻出盘。
          滑块位置由 modeSwitchRef 实测按钮几何后写入 --mb-x / --mb-w（纯 CSS calc 在
@@ -1286,7 +1300,7 @@ onMounted(() => {
   </template>
 
   <!-- ═══════════════ 紫微盘 ═══════════════ -->
-  <template v-else>
+  <template v-else-if="mode === 'ziwei'">
   <div v-if="!pan" class="panel empty-state">
     <p>
       填一下<b>姓名</b>（出生时间已预填 1990-06-15 12:00，改成实际的即可），然后点<b>「开始排盘」</b>。<br />
@@ -1552,5 +1566,16 @@ onMounted(() => {
   </div>
 
   <div v-else class="panel empty-tip">请填写出生资料后点击「开始排盘」</div>
+  </template>
+
+  <!-- ═══════════════ 河洛理数 ═══════════════ -->
+  <template v-else-if="mode === 'heluo'">
+    <div v-if="!pan" class="panel empty-state">
+      <p>
+        填一下<b>姓名</b>并点<b>「开始排盘」</b>。河洛理数与紫微共用同一份出生资料，
+        算法需要的是四柱干支，所以先排盘再切过来即可。
+      </p>
+    </div>
+    <HeLuoPan v-else :pan="pan" :sex="form.sex" />
   </template>
 </template>

@@ -2051,3 +2051,440 @@ body {
 }
 .bz-sm{ font-family:var(--f-body); font-size:11.5px; color:var(--ink-2); }
 .bz-sm b{ color:var(--accent); font-weight:700; }
+/* ==========================================================================
+   河洛理数（.hl-*）
+   与盘面同一套令牌，四套皮肤自动跟随。
+   类名体系移植自 horosa-web-app 的 horosa-heluo-*。
+   ========================================================================== */
+.hl {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.hl-empty {
+  padding: 24px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink-3);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ---------- 流派开关 ---------- */
+.hl-switches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.hl-sw-label {
+  color: var(--ink-3);
+}
+
+.hl-sw {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.hl-sw select {
+  height: 26px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.hl-num {
+  width: 62px;
+  height: 26px;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.hl-snapinfo {
+  color: var(--ok);
+}
+
+/* ---------- 概要条 ---------- */
+.hl-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+}
+
+.hl-part {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.hl-sub,
+.hl-sub2 {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* ---------- 卡片 ---------- */
+.hl-card {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+.hl-card h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.hl-row {
+  display: flex;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--line-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.hl-row:last-child {
+  border-bottom: 0;
+}
+
+.hl-row > span {
+  flex: 0 0 88px;
+  color: var(--ink-3);
+}
+
+.hl-row > strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 500;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+/* ---------- 卦象 ---------- */
+.hl-guahead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.hl-gua {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+
+.hl-yaorow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.hl-yaorow.is-yuan {
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+}
+
+.hl-najia {
+  flex: 0 0 66px;
+  color: var(--ink-2);
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  white-space: nowrap;
+}
+
+.hl-shiying {
+  color: var(--accent);
+  font-style: normal;
+}
+
+.hl-barwrap {
+  flex: 0 0 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hl-bar.yang {
+  width: 84px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--ink);
+}
+
+.hl-bar.yin {
+  width: 84px;
+  height: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.hl-bar.yin i {
+  display: block;
+  width: 36px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--ink);
+}
+
+.hl-yaolabel {
+  flex: 0 0 auto;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.hl-guameta {
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
+  font-size: 13px;
+}
+
+.hl-guaname {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.hl-verdict {
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 3px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.hl-meta {
+  color: var(--ink-2);
+}
+
+.hl-gist {
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+
+/* ---------- 理数 chips ---------- */
+.hl-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.hl-tag {
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink-2);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.hl-tag.is-rel {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+
+.hl-tag.is-xiong {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.hl-tag.is-fan {
+  border-style: dashed;
+}
+
+.hl-tag-none {
+  color: var(--ink-3);
+}
+
+/* ---------- 经文 / 爻辞 ---------- */
+.hl-jing {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+
+.hl-jing-item,
+.hl-yaoci-item {
+  padding: 3px 0;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--ink-2);
+  word-break: break-word;
+}
+
+.hl-jing-item b,
+.hl-yaoci-item b {
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+.hl-yaoci {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+.hl-yaoci-head {
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.hl-yaoci-none {
+  margin-top: 8px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+/* ---------- 表格 ---------- */
+.hl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.hl-table th {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-3);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.hl-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink);
+  vertical-align: top;
+}
+
+.hl-table tbody tr {
+  cursor: pointer;
+}
+
+.hl-table tbody tr:hover,
+.hl-table tbody tr.is-open {
+  background: var(--accent-soft);
+}
+
+.hl-table tbody tr.is-active {
+  background: var(--accent-soft);
+  outline: 1px solid var(--accent);
+}
+
+.hl-detailrow,
+.hl-detailrow:hover {
+  cursor: default;
+  background: none;
+}
+
+.hl-detailrow > td {
+  background: var(--paper);
+}
+
+.hl-tiny {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.hl-tagcell {
+  max-width: 220px;
+}
+
+.hl-wscell {
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+
+.hl-arrowcell {
+  width: 26px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.hl-arrow {
+  display: inline-block;
+  color: var(--ink-3);
+  transition: transform 0.16s ease;
+}
+
+.hl-arrow.is-open {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+/* ---------- 下钻 ---------- */
+.hl-drill {
+  margin-top: 12px;
+  padding-left: 12px;
+  border-left: 2px solid var(--line);
+}
+
+.hl-aux {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 560px) {
+  .hl-row > span {
+    flex-basis: 76px;
+  }
+
+  .hl-guahead {
+    gap: 10px;
+  }
+
+  .hl-drill {
+    padding-left: 8px;
+  }
+
+  /* 窄屏让表格自己横向滚，别把列挤到读不了 */
+  .hl-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
