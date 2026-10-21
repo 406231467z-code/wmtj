@@ -1576,6 +1576,6 @@ onMounted(() => {
         算法需要的是四柱干支，所以先排盘再切过来即可。
       </p>
     </div>
-    <HeLuoPan v-else :pan="pan" :sex="form.sex" />
+    <HeLuoPan v-else :pan="pan" :bazi="baziRaw" :sex="form.sex" />
   </template>
 </template>

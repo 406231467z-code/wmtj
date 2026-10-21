@@ -260,14 +260,22 @@ export function paipan(opt) {
   const mGan = mGanRaw === 0 ? 10 : mGanRaw
   const mZhi = lMonth + 2 > 12 ? lMonth + 2 - 12 : lMonth + 2
 
-  const dayPillar = lunar.gzDay
+  // ---------- 晚子时（cfg_wanzishi_bz）----------
+  // hourToZhiIndex 把 00:00-00:59 与 23:00-23:59 **都**映射成「子」（0 基 0），
+  // 所以早/晚子时开关根本不该去改时支——旧实现写 `hZhi0 = 11`（11 是「亥」），
+  // 一旦命中就会把子时算成亥时；另一个分支 `hZhi0 = 0` 更是空操作。
+  // 真正的分歧点是**日柱**：23 点算当日还是次日。时支恒为子，时干按日干起。
+  let dayPillar = lunar.gzDay
+  if (st.h === 23 && cfg.cfg_wanzishi_bz === '2') {
+    const t = new Date(Date.UTC(st.y, st.m - 1, st.d) + 86400000)
+    const nl = solar2lunar(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate())
+    if (nl !== -1 && nl && nl.gzDay) dayPillar = nl.gzDay
+  }
   const dGan = indexOfGan(dayPillar[0])
   const dZhi = indexOfZhi(dayPillar[1])
 
-  // 早子时 / 晚子时（cfg_zaozishi / cfg_wanzishi_bz）
-  let hZhi0 = hourToZhiIndex(st.h)              // 0 基
-  if (st.h === 0 && cfg.cfg_zaozishi === '2') hZhi0 = 0     // 早子时归当日
-  if (st.h === 23 && cfg.cfg_wanzishi_bz === '2') hZhi0 = 11 // 晚子时归次日子时
+  // 早子时（cfg_zaozishi='2' 归当日）：hourToZhiIndex(0) 本就是子，此处无需改动。
+  const hZhi0 = hourToZhiIndex(st.h)            // 0 基（23 点与 0 点均为 0=子）
   const hZhi = hZhi0 + 1                        // 1 基（源码 vars.bz[7]）
   const hGan = wrap12Gan((hourHeadGan(dGan) - 1 + hZhi0) % 10 + 1)
 

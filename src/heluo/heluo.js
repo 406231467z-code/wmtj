@@ -182,10 +182,37 @@ export function najia(name) {
   return out
 }
 
+// ---------- 四柱来源 ----------
+/**
+ * 取四柱：**优先用八字引擎的 fourColumns**，只在八字盘缺失时退回紫微的 bzText。
+ *
+ * 这一点是照搬上游 horosa 的做法（HeLuoMain.js:219-222）：
+ *     const fc = (bazi && bazi.fourColumns) || {};
+ *     const fourPillars = { year: gz(fc.year), ... };
+ * 即河洛原本就吃八字引擎的结果，从不读紫微的 bzText。
+ *
+ * 为什么不能读紫微：两个引擎的晚子时口径不同。
+ *   八字引擎 after23NewDay=1 → 23:00-23:59 日柱进位次日，时干按次日日干起子时；
+ *   紫微 bzText            → 日柱留当日，时干按当日日干起子时。
+ * 同一份出生信息差一整个日柱，起卦的天数/地数与先后天卦全错。
+ */
+function fourPillarsOf(bazi) {
+  const fc = bazi && bazi.bazi && bazi.bazi.fourColumns
+  if (!fc) return null
+  const gz = (p) => (p && (p.ganzi || p.ganZhi)) || ''
+  const fp = {
+    year: gz(fc.year),
+    month: gz(fc.month),
+    day: gz(fc.day),
+    hour: gz(fc.time),
+  }
+  return fp.year && fp.month && fp.day && fp.hour ? fp : null
+}
+
 // ---------- 主入口：由 wmtj 的排盘结果组装河洛模型 ----------
-export function buildHeluoModel({ pan, sex, opts }) {
-  if (!pan || !pan.bzText) return null
-  const fp = pan.bzText
+export function buildHeluoModel({ pan, bazi, sex, opts }) {
+  const fp = fourPillarsOf(bazi) || (pan && pan.bzText)
+  if (!fp) return null
   if (!fp.year || !fp.month || !fp.day || !fp.hour) return null
 
   const monthZhi = fp.month.charAt(1)
@@ -210,7 +237,9 @@ export function buildHeluoModel({ pan, sex, opts }) {
   const st = solarTermLocal(solar.y, solar.m, solar.d, (opts && opts.quHuaGong) || HELUO_DEFAULTS.quHuaGong)
   const jg = judge(chart, fp, monthZhi, st)
 
-  const nayinStr = NAYIN[fp.year] || ''
+  // 纳音：上游取 fc.year.naying，这里优先用引擎给的，取不到再退回内置六十甲子表
+  const fcYear = bazi && bazi.bazi && bazi.bazi.fourColumns && bazi.bazi.fourColumns.year
+  const nayinStr = (fcYear && (fcYear.naying || fcYear.nayin)) || NAYIN[fp.year] || ''
   const nayin = '金木水火土'.includes(nayinStr.slice(-1)) ? nayinStr.slice(-1) : ''
   const extras = chartExtras(chart, fp, monthZhi, jg, {
     sanhou: st ? st.houLabel : '',

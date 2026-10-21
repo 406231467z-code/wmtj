@@ -36,6 +36,8 @@ import {
 
 const props = defineProps({
   pan: { type: Object, default: null },
+  /** 八字引擎的排盘结果 —— 河洛的四柱取自它（与上游 horosa 一致），不是紫微的 bzText */
+  bazi: { type: Object, default: null },
   sex: { type: [Number, String], default: 1 },
 })
 
@@ -47,7 +49,9 @@ function setOpt(k, v) {
 }
 
 // ---------- 模型 ----------
-const model = computed(() => buildHeluoModel({ pan: props.pan, sex: props.sex, opts: opts.value }))
+const model = computed(() =>
+  buildHeluoModel({ pan: props.pan, bazi: props.bazi, sex: props.sex, opts: opts.value })
+)
 
 // ---------- 展开状态 ----------
 const daxianKey = ref('')
