@@ -2571,6 +2571,11 @@ body {
   font-size: 11.5px;
 }
 
+.tb-snapinfo {
+  color: var(--ok);
+  font-size: 11.5px;
+}
+
 /* ---------- 卡片 ---------- */
 .tb-card {
   padding: 12px 14px;

@@ -90,6 +90,105 @@ export function buildTiebanModel({ pan, bazi, sex, askGz }) {
   }
 }
 
+// ---------- 一键复制：全部结果 ----------
+
+/**
+ * 生成「全部结果」纯文本，供一键复制。
+ *
+ * 覆盖盘面全部卡片，一字不漏：
+ *   本命推算流程（10 步）/ 本命结论 / 本命条文 /
+ *   流年总纲 / 流年条文（1~108 岁全）/ 说明
+ *
+ * @param {object} m      buildTiebanModel() 的返回值
+ * @param {object|null} vs 条文库（loadTiebanVerses()）；未载入时只留条号，不阻塞复制
+ */
+export function buildTiebanText(m, vs) {
+  if (!m || !m.result) return ''
+  const { fourPillars: fp, gender, lunar, askGz, defaultAskGz } = m
+  const b = m.result.benming
+  const ln = m.result.liunian
+
+  const verse = (n) => {
+    if (n === null || n === undefined) return ''
+    if (!vs) return '（条文库未载入）'
+    return vs[String(n)] || '（此条正文原书未收）'
+  }
+
+  const L = []
+  const blank = () => { if (L.length && L[L.length - 1] !== '') L.push('') }
+  const section = (t) => { blank(); L.push(`═══ ${t} ═══`) }
+
+  // ---------- 抬头 ----------
+  L.push('天机阁 · 铁板神数排盘')
+  L.push(`四柱：${fp.join(' ')}　${gender}命`)
+  L.push(`农历：${lunar.month}月${lunar.day}日${lunar.isLeapMonth ? '（闰月按下月计）' : ''}`)
+  L.push(
+    `求测时辰：${askGz}`
+    + (askGz === defaultAskGz ? '（本人时柱）' : `（改自本人时柱 ${defaultAskGz}，整盘已重算）`)
+  )
+
+  // ---------- 一、本命推算流程 ----------
+  section('一、本命推算流程')
+  ;(b.steps || []).forEach((s, i) => {
+    L.push(`${i + 1}. ${s.label}：${s.input} → ${s.output !== undefined ? s.output : '—'}　（${s.table}）`)
+  })
+
+  // ---------- 二、本命结论 ----------
+  section('二、本命结论')
+  L.push(`考刻：${b.ke}`)
+  L.push(`本命数：${b.benMingShu}`)
+  L.push(`十二辟卦：${b.biGua || '（本命数超出古籍所载范围）'}`)
+  L.push(`辟卦基数＋序数：${b.base != null ? `${b.base} ＋ ${b.xuShu}` : '—'}`)
+
+  // ---------- 本命条文 ----------
+  blank()
+  L.push('── 本命条文 ──')
+  const items = b.items || {}
+  const keys = Object.keys(items)
+  if (!keys.length) {
+    L.push('（暂无条文）')
+  } else {
+    keys.forEach((k) => {
+      const it = items[k]
+      if (it.skipped) {
+        L.push(`${k}：${it.reason}`)
+        return
+      }
+      const nums = it.nums || []
+      if (!nums.length) {
+        L.push(`${k}：（无条文）`)
+        return
+      }
+      nums.forEach((n) => L.push(`${k} ${n}：${verse(n)}`))
+    })
+  }
+
+  // ---------- 三、流年总纲 ----------
+  if (ln) {
+    section('三、流年总纲')
+    L.push(`天四声（12 年一循环）：${(ln.seq || []).join(' ')}`)
+    L.push(`后天命数：${ln.houTian}`)
+    L.push(`年支三合局：${ln.zhiGroup}`)
+    L.push(`覆盖：${ln.rows.length} 年（1~${ln.rows.length}）`)
+
+    // ---------- 四、流年条文 ----------
+    section(`四、流年条文（${ln.rows.length} 年全）`)
+    ln.rows.forEach((x) => {
+      const head = `${x.age}岁　${x.gz}　${x.tianSiSheng}`
+      if (x.missing) L.push(`${head}　—　（古籍原缺此格）`)
+      else L.push(`${head}　${x.num}　${verse(x.num)}`)
+    })
+  }
+
+  // ---------- 五、说明 ----------
+  if (b.notes && b.notes.length) {
+    section('五、说明')
+    b.notes.forEach((n) => L.push(`· ${n}`))
+  }
+
+  return L.join('\n')
+}
+
 export {
   calcTieban,
   calcTiebanBenming,

@@ -10,7 +10,7 @@
  * 算法内核在 src/tieban/tiebanLocal.js（原样搬入），条文库 465KB 按需动态加载。
  */
 import { computed, onMounted, ref } from 'vue'
-import { buildTiebanModel, loadTiebanVerses, GZ60 } from '../tieban/tieban'
+import { buildTiebanModel, buildTiebanText, loadTiebanVerses, GZ60 } from '../tieban/tieban'
 
 const props = defineProps({
   pan: { type: Object, default: null },
@@ -71,6 +71,56 @@ const benmingRows = computed(() => {
   })
   return rows
 })
+
+// ---------- 一键复制 ----------
+const snapInfo = ref('')
+
+/** 写剪贴板：优先 async API，失败退回 textarea + execCommand（非 https 也能用） */
+async function putClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch (e) {
+    try {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      ta.setAttribute('readonly', '')
+      ta.style.position = 'fixed'
+      ta.style.top = '-9999px'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(ta)
+      return ok
+    } catch (e2) {
+      return false
+    }
+  }
+}
+
+/**
+ * 复制全部：本命推算流程 + 本命结论 + 本命条文 +
+ * 流年总纲 + 流年条文（1~108 岁全）+ 说明，与盘面内容一一对应。
+ * 条文库尚未载入时先补载，避免复制出只有条号的文本。
+ */
+async function copyAll() {
+  const m = model.value
+  if (!m) return
+  if (!verses.value) {
+    try {
+      verses.value = await loadTiebanVerses()
+      verseState.value = `条文库已载入（${Object.keys(verses.value).length} 条）`
+    } catch (e) {
+      verseState.value = '条文库载入失败，条文号仍可查看'
+    }
+  }
+  const text = buildTiebanText(m, verses.value)
+  if (!text) return
+  const ok = await putClipboard(text)
+  snapInfo.value = ok ? `已复制 ${text.length} 字符` : `已生成 ${text.length} 字符（剪贴板不可用，请手动选取）`
+  setTimeout(() => { snapInfo.value = '' }, 3000)
+}
 </script>
 
 <template>
@@ -100,6 +150,15 @@ const benmingRows = computed(() => {
           复原
         </button>
       </label>
+      <button
+        class="btn tiny primary"
+        type="button"
+        title="本命推算流程 + 本命结论 + 本命条文 + 流年总纲 + 流年条文（1~108 岁全）+ 说明"
+        @click="copyAll"
+      >
+        复制全部结果
+      </button>
+      <span v-if="snapInfo" class="tb-snapinfo">{{ snapInfo }}</span>
       <span class="tb-hint">{{ verseState }}</span>
     </div>
 
