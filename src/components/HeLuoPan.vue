@@ -6,7 +6,7 @@
  * 上游把内容拆成 center / aux 两个 slot（宿主是三栏布局），这里只有单栏，
  * 因此把两处内容纵向铺开，功能一个不少。
  */
-import { computed, ref } from 'vue'
+import { computed, h, ref } from 'vue'
 import {
   buildHeluoModel,
   HELUO_DEFAULTS,
@@ -167,8 +167,18 @@ const auxCards = computed(() => {
 })
 
 // ---------- 交互 ----------
-function toggle(keyRef, val) {
-  keyRef.value = keyRef.value === val ? '' : val
+/**
+ * 折叠开关：返回切换后的值。
+ *
+ * 注意不能写成 `toggle(openYao, key)` 再在函数里改 `keyRef.value` ——
+ * 模板里 `openYao` 已被自动解包成字符串，传进来的是值不是 ref，
+ * 对原始值赋 `.value` 在严格模式下抛 TypeError，被 Vue 的
+ * 事件错误处理吞掉，表现为「点了没反应」。
+ * 正确用法：模板里直接赋值 `openYao = toggle(openYao, key)`，
+ * 编译器会生成对 .value 的写入。
+ */
+function toggle(cur, val) {
+  return cur === val ? '' : val
 }
 function liShuChips(lines, jg, chart) {
   const rels = chart ? guaRelations(lines, chart).filter((r) => r.indexOf('即') < 0) : []
@@ -183,6 +193,71 @@ function liShuChips(lines, jg, chart) {
     ...items.map((it) => ({ text: it.text, rel: false, xiong: false, fan: !!it.fan })),
   ]
 }
+/**
+ * 爻辞详情块的取数 —— 等价于上游 HeLuoMain.js:350-365 的 renderYaoci()。
+ *
+ * 上游对**所有层级**（本命 / 大限 / 流年 / 流月 / 流日）复用同一个 renderYaoci，
+ * 四个字段一律全给：
+ *   易经爻辞 yaoci / 摘要 detail / 诗歌 shige / 易经爻辞推命 mingtiao[slot]
+ * 另外头部还拼了「命卦对体关系」rels（chart 存在时才算）。
+ *
+ * 之前这里只在流年·流月·流日渲染了「摘要 + 推命」，把爻辞和诗歌漏掉了，
+ * 大限与流年的头部也缺 rels。现改为五处共用本函数，避免再各写一遍。
+ */
+function yaociBlock(guaName, pos, lines, slot) {
+  const chart = model.value && model.value.chart
+  const yt = yaoText(guaName, pos) || {}
+  const ni = (((guaInfo(guaName) || {}).mingtiao || {})[slot || 'liunian']) || ''
+  const rels = chart ? guaRelations(lines, chart).filter((r) => r.indexOf('即') < 0) : []
+  return {
+    head: `${guaName} · ${yaoName(lines, pos)}`,
+    verdict: yt.verdict || '',
+    rels,
+    yaoci: yt.yaoci || '',
+    detail: yt.detail || '',
+    shige: yt.shige || '',
+    mingtiao: ni,
+    // 上游：四者全空才显示「（空爻·无条文）」
+    empty: !(yt.shige || yt.detail || ni || yt.yaoci),
+  }
+}
+
+/**
+ * 大限取哪个「易经爻辞推命」：该限属先天盘用 xiantian，否则用 houtian。
+ * 与上游 renderDaxian 里 `const slot = m.dy.xian.indexOf(s) >= 0 ? ...` 同义。
+ */
+function daxianSlot(s) {
+  const m = model.value
+  return m && m.dy && m.dy.xian.indexOf(s) >= 0 ? 'xiantian' : 'houtian'
+}
+
+/**
+ * 爻辞详情块的呈现。功能组件，供上面五处复用。
+ * 字段顺序与上游一致：易经爻辞 → 摘要 → 诗歌 → 易经爻辞推命。
+ */
+const YaociBlock = (props) => {
+  const b = props.b
+  if (!b || b.empty) return h('div', { class: 'hl-yaoci-none' }, '（空爻·无条文）')
+  return h('div', { class: 'hl-yaoci' }, [
+    h('div', { class: 'hl-yaoci-head' }, [
+      b.head,
+      b.verdict ? h('span', { class: 'hl-verdict' }, b.verdict) : null,
+      b.rels && b.rels.length
+        ? h('span', { class: 'hl-yaoci-rel' }, ' · ' + b.rels.join('，'))
+        : null,
+    ]),
+    b.yaoci ? h('div', { class: 'hl-yaoci-item' }, [h('b', null, '易经爻辞'), b.yaoci]) : null,
+    b.detail ? h('div', { class: 'hl-yaoci-item' }, [h('b', null, '摘要'), b.detail]) : null,
+    b.shige
+      ? h('div', { class: 'hl-yaoci-item is-shige' }, [h('b', null, '诗歌'), b.shige])
+      : null,
+    b.mingtiao
+      ? h('div', { class: 'hl-yaoci-item' }, [h('b', null, '易经爻辞推命'), b.mingtiao])
+      : null,
+  ])
+}
+YaociBlock.props = { b: { type: Object, default: null } }
+
 function drillDaxian(key) {
   daxianKey.value = daxianKey.value === key ? '' : key
   liunianKey.value = ''
@@ -346,7 +421,7 @@ async function copySnapshot() {
             >{{ c.text }}{{ c.xiong ? '·凶' : '' }}</span>
             <span v-if="!liShuChips(g.gua.lines, model.jg, model.chart).length" class="hl-tag-none">—</span>
           </div>
-          <button class="btn tiny" type="button" @click="toggle(openJing, 'jing:' + g.slot)">
+          <button class="btn tiny" type="button" @click="openJing = toggle(openJing, 'jing:' + g.slot)">
             {{ openJing === 'jing:' + g.slot ? '▾ 收起经文' : '▸ 经文（卦义·卦辞·总诀）' }}
           </button>
         </div>
@@ -365,31 +440,7 @@ async function copySnapshot() {
       </div>
 
       <!-- 元堂爻辞 -->
-      <div
-        v-if="(yaoText(g.gua.name, g.gua.yuan) || {}).shige
-          || (yaoText(g.gua.name, g.gua.yuan) || {}).detail
-          || ((guaInfo(g.gua.name) || {}).mingtiao || {})[g.slot]
-          || (yaoText(g.gua.name, g.gua.yuan) || {}).yaoci"
-        class="hl-yaoci"
-      >
-        <div class="hl-yaoci-head">
-          {{ g.gua.name }} · {{ yaoName(g.gua.lines, g.gua.yuan) }}
-          <span class="hl-verdict">{{ (yaoText(g.gua.name, g.gua.yuan) || {}).verdict }}</span>
-        </div>
-        <div v-if="(yaoText(g.gua.name, g.gua.yuan) || {}).yaoci" class="hl-yaoci-item">
-          <b>易经爻辞</b>{{ (yaoText(g.gua.name, g.gua.yuan) || {}).yaoci }}
-        </div>
-        <div v-if="(yaoText(g.gua.name, g.gua.yuan) || {}).detail" class="hl-yaoci-item">
-          <b>摘要</b>{{ (yaoText(g.gua.name, g.gua.yuan) || {}).detail }}
-        </div>
-        <div v-if="(yaoText(g.gua.name, g.gua.yuan) || {}).shige" class="hl-yaoci-item">
-          <b>诗歌</b>{{ (yaoText(g.gua.name, g.gua.yuan) || {}).shige }}
-        </div>
-        <div v-if="((guaInfo(g.gua.name) || {}).mingtiao || {})[g.slot]" class="hl-yaoci-item">
-          <b>易经爻辞推命</b>{{ ((guaInfo(g.gua.name) || {}).mingtiao || {})[g.slot] }}
-        </div>
-      </div>
-      <div v-else class="hl-yaoci-none">（空爻·无条文）</div>
+      <YaociBlock :b="yaociBlock(g.gua.name, g.gua.yuan, g.gua.lines, g.slot)" />
     </div>
 
     <!-- 大限四级下钻 -->
@@ -403,7 +454,7 @@ async function copySnapshot() {
           <template v-for="s in model.dy.all" :key="s.gua + s.pos + s.ageStart">
             <tr
               :class="{ 'is-active': daxianKey === `${s.gua}|${s.pos}|${s.ageStart}`, 'is-open': openYao === `dx:${s.gua}|${s.pos}|${s.ageStart}` }"
-              @click="toggle(openYao, `dx:${s.gua}|${s.pos}|${s.ageStart}`)"
+              @click="openYao = toggle(openYao, `dx:${s.gua}|${s.pos}|${s.ageStart}`)"
             >
               <td>{{ s.ageStart }}-{{ s.ageEnd }}</td>
               <td>{{ s.gua }}</td>
@@ -415,27 +466,7 @@ async function copySnapshot() {
             </tr>
             <tr v-if="openYao === `dx:${s.gua}|${s.pos}|${s.ageStart}`" class="hl-detailrow">
               <td :colspan="5">
-                <div class="hl-yaoci">
-                  <div class="hl-yaoci-head">
-                    {{ s.gua }} · {{ yaoName(s.lines, s.pos) }}
-                    <span class="hl-verdict">{{ (yaoText(s.gua, s.pos) || {}).verdict }}</span>
-                  </div>
-                  <div v-if="(yaoText(s.gua, s.pos) || {}).yaoci" class="hl-yaoci-item">
-                    <b>易经爻辞</b>{{ (yaoText(s.gua, s.pos) || {}).yaoci }}
-                  </div>
-                  <div v-if="(yaoText(s.gua, s.pos) || {}).detail" class="hl-yaoci-item">
-                    <b>摘要</b>{{ (yaoText(s.gua, s.pos) || {}).detail }}
-                  </div>
-                  <div v-if="(yaoText(s.gua, s.pos) || {}).shige" class="hl-yaoci-item">
-                    <b>诗歌</b>{{ (yaoText(s.gua, s.pos) || {}).shige }}
-                  </div>
-                  <div
-                    v-if="((guaInfo(s.gua) || {}).mingtiao || {})[model.dy.xian.indexOf(s) >= 0 ? 'xiantian' : 'houtian']"
-                    class="hl-yaoci-item"
-                  >
-                    <b>易经爻辞推命</b>{{ ((guaInfo(s.gua) || {}).mingtiao || {})[model.dy.xian.indexOf(s) >= 0 ? 'xiantian' : 'houtian'] }}
-                  </div>
-                </div>
+                <YaociBlock :b="yaociBlock(s.gua, s.pos, s.lines, daxianSlot(s))" />
               </td>
             </tr>
           </template>
@@ -455,7 +486,7 @@ async function copySnapshot() {
             <template v-for="y in liunianRows" :key="y.age">
               <tr
                 :class="{ 'is-active': liunianKey === `${curSeg.ageStart}:${y.age}`, 'is-open': openYao === `ln:${curSeg.ageStart}:${y.age}` }"
-                @click="toggle(openYao, `ln:${curSeg.ageStart}:${y.age}`)"
+                @click="openYao = toggle(openYao, `ln:${curSeg.ageStart}:${y.age}`)"
               >
                 <td>{{ y.age }}</td>
                 <td>
@@ -480,18 +511,7 @@ async function copySnapshot() {
               </tr>
               <tr v-if="openYao === `ln:${curSeg.ageStart}:${y.age}`" class="hl-detailrow">
                 <td :colspan="6">
-                  <div class="hl-yaoci">
-                    <div class="hl-yaoci-head">
-                      {{ y.gua }} · {{ yaoName(y.lines, y.pos) }}
-                      <span class="hl-verdict">{{ (yaoText(y.gua, y.pos) || {}).verdict }}</span>
-                    </div>
-                    <div v-if="(yaoText(y.gua, y.pos) || {}).detail" class="hl-yaoci-item">
-                      <b>摘要</b>{{ (yaoText(y.gua, y.pos) || {}).detail }}
-                    </div>
-                    <div v-if="((guaInfo(y.gua) || {}).mingtiao || {}).liunian" class="hl-yaoci-item">
-                      <b>易经爻辞推命</b>{{ ((guaInfo(y.gua) || {}).mingtiao || {}).liunian }}
-                    </div>
-                  </div>
+                  <YaociBlock :b="yaociBlock(y.gua, y.pos, y.lines, 'liunian')" />
                 </td>
               </tr>
             </template>
@@ -512,7 +532,7 @@ async function copySnapshot() {
               <template v-for="mo in liuyueRows" :key="mo.month">
                 <tr
                   :class="{ 'is-active': liuyueKey === `${yearForMonth.age}:${mo.month}`, 'is-open': openYao === `ly:${yearForMonth.age}:${mo.month}` }"
-                  @click="toggle(openYao, `ly:${yearForMonth.age}:${mo.month}`)"
+                  @click="openYao = toggle(openYao, `ly:${yearForMonth.age}:${mo.month}`)"
                 >
                   <td>
                     {{ mo.label }}月
@@ -542,18 +562,7 @@ async function copySnapshot() {
                 </tr>
                 <tr v-if="openYao === `ly:${yearForMonth.age}:${mo.month}`" class="hl-detailrow">
                   <td :colspan="6">
-                    <div class="hl-yaoci">
-                      <div class="hl-yaoci-head">
-                        {{ mo.gua }} · {{ yaoName(mo.lines, mo.pos) }}
-                        <span class="hl-verdict">{{ (yaoText(mo.gua, mo.pos) || {}).verdict }}</span>
-                      </div>
-                      <div v-if="(yaoText(mo.gua, mo.pos) || {}).detail" class="hl-yaoci-item">
-                        <b>摘要</b>{{ (yaoText(mo.gua, mo.pos) || {}).detail }}
-                      </div>
-                      <div v-if="((guaInfo(mo.gua) || {}).mingtiao || {}).liunian" class="hl-yaoci-item">
-                        <b>易经爻辞推命</b>{{ ((guaInfo(mo.gua) || {}).mingtiao || {}).liunian }}
-                      </div>
-                    </div>
+                    <YaociBlock :b="yaociBlock(mo.gua, mo.pos, mo.lines, 'liunian')" />
                   </td>
                 </tr>
               </template>
@@ -573,7 +582,7 @@ async function copySnapshot() {
                 <template v-for="d in liuriRows" :key="d.dayInMonth">
                   <tr
                     :class="{ 'is-open': openYao === `lr:${monthForDay.month}:${d.dayInMonth}` }"
-                    @click="toggle(openYao, `lr:${monthForDay.month}:${d.dayInMonth}`)"
+                    @click="openYao = toggle(openYao, `lr:${monthForDay.month}:${d.dayInMonth}`)"
                   >
                     <td>第{{ d.dayInMonth }}日</td>
                     <td>{{ d.gua }}</td>
@@ -589,18 +598,7 @@ async function copySnapshot() {
                   </tr>
                   <tr v-if="openYao === `lr:${monthForDay.month}:${d.dayInMonth}`" class="hl-detailrow">
                     <td :colspan="4">
-                      <div class="hl-yaoci">
-                        <div class="hl-yaoci-head">
-                          {{ d.gua }} · {{ yaoName(d.lines, d.pos) }}
-                          <span class="hl-verdict">{{ (yaoText(d.gua, d.pos) || {}).verdict }}</span>
-                        </div>
-                        <div v-if="(yaoText(d.gua, d.pos) || {}).detail" class="hl-yaoci-item">
-                          <b>摘要</b>{{ (yaoText(d.gua, d.pos) || {}).detail }}
-                        </div>
-                        <div v-if="((guaInfo(d.gua) || {}).mingtiao || {}).liunian" class="hl-yaoci-item">
-                          <b>易经爻辞推命</b>{{ ((guaInfo(d.gua) || {}).mingtiao || {}).liunian }}
-                        </div>
-                      </div>
+                      <YaociBlock :b="yaociBlock(d.gua, d.pos, d.lines, 'liunian')" />
                     </td>
                   </tr>
                 </template>

@@ -2370,6 +2370,17 @@ body {
   color: var(--ink);
 }
 
+/* 命卦对体关系：跟在吉凶后面的补充说明（原 app.less:21519 同款） */
+.hl-yaoci-rel {
+  font-weight: 600;
+  color: var(--accent-2);
+}
+
+/* 诗歌原文自带换行，须保留（否则整段挤成一行） */
+.hl-yaoci-item.is-shige {
+  white-space: pre-line;
+}
+
 .hl-yaoci-none {
   margin-top: 8px;
   color: var(--ink-3);
