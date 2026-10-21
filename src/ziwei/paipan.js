@@ -245,7 +245,22 @@ export function paipan(opt) {
   const solarClock = { y: cy, m: cm, d: cd, h: ch, min: cmin }
   const st = trueSolarTime ? toTrueSolarTime(cy, cm, cd, ch, cmin, jd) : solarClock
 
-  const lunar = solar2lunar(st.y, st.m, st.d)
+  // ---------- 晚子时（23:00-23:59）----------
+  // 主流流派按「次日子时」论，且必须**日柱与安星一起进位**。
+  // 只推进日柱会留下半截状态——日柱已经是次日，安星却仍按当日的农历日：
+  //   1996-09-17 23:40（农历八月初五、白露后）
+  //     按初五安星 → 命宫（酉）武曲七杀   ← 错
+  //     按初六安星 → 命宫（酉）天同       ← 对，且日柱同为戊午
+  // 所以这里在取农历**之前**把日期挪到次日，日柱 / 农历日 / 安星自然一致。
+  // 用独立的 eff，solarClock 与 st 保持原样，界面显示的出生时刻不变。
+  const wanzishiNext = st.h === 23 && cfg.cfg_wanzishi_bz === '2'
+  let eff = st
+  if (wanzishiNext) {
+    const t = new Date(Date.UTC(st.y, st.m - 1, st.d) + 86400000)
+    eff = { ...st, y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() }
+  }
+
+  const lunar = solar2lunar(eff.y, eff.m, eff.d)
   if (lunar === -1) throw new Error('日期超出支持范围（1900-01-31 ~ 2100-12-01）')
 
   // ---------- 2. 四柱 ----------
@@ -260,21 +275,16 @@ export function paipan(opt) {
   const mGan = mGanRaw === 0 ? 10 : mGanRaw
   const mZhi = lMonth + 2 > 12 ? lMonth + 2 - 12 : lMonth + 2
 
-  // ---------- 晚子时（cfg_wanzishi_bz）----------
-  // hourToZhiIndex 把 00:00-00:59 与 23:00-23:59 **都**映射成「子」（0 基 0），
-  // 所以早/晚子时开关根本不该去改时支——旧实现写 `hZhi0 = 11`（11 是「亥」），
-  // 一旦命中就会把子时算成亥时；另一个分支 `hZhi0 = 0` 更是空操作。
-  // 真正的分歧点是**日柱**：23 点算当日还是次日。时支恒为子，时干按日干起。
-  let dayPillar = lunar.gzDay
-  if (st.h === 23 && cfg.cfg_wanzishi_bz === '2') {
-    const t = new Date(Date.UTC(st.y, st.m - 1, st.d) + 86400000)
-    const nl = solar2lunar(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate())
-    if (nl !== -1 && nl && nl.gzDay) dayPillar = nl.gzDay
-  }
+  // ---------- 四柱 ----------
+  // 晚子时的进位已在上面完成（日期整体挪到次日），所以这里**不能**再进一位，
+  // 否则会多算一天。lunar.gzDay 已是正确日柱（23 点 → 次日，如戊午）。
+  const dayPillar = lunar.gzDay
   const dGan = indexOfGan(dayPillar[0])
   const dZhi = indexOfZhi(dayPillar[1])
 
-  // 早子时（cfg_zaozishi='2' 归当日）：hourToZhiIndex(0) 本就是子，此处无需改动。
+  // 时支：00:00-00:59 与 23:00-23:59 都落在「子」（0 基 0）。
+  // 旧实现写 `hZhi0 = 11`（11 是「亥」），一旦命中就把子时算成亥时，已废弃；
+  // 早子时（cfg_zaozishi='2' 归当日）同理无需另改时支。
   const hZhi0 = hourToZhiIndex(st.h)            // 0 基（23 点与 0 点均为 0=子）
   const hZhi = hZhi0 + 1                        // 1 基（源码 vars.bz[7]）
   const hGan = wrap12Gan((hourHeadGan(dGan) - 1 + hZhi0) % 10 + 1)

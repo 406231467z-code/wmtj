@@ -1757,8 +1757,14 @@ body {
 }
 [data-skin="night"] .bz-zhu{ background:linear-gradient(160deg, rgba(34,40,52,.92), rgba(26,31,42,.96)); }
 
-/* 日柱 = 命宫位：朱砂左条 + 暖底 */
-.bz-zhu.day{ background:var(--ming-bg); }
+/* 日柱 = 命宫位：朱砂左条 + 暖底
+   底色必须用**已定义**的令牌。原来写的 var(--ming-bg) 全项目从未定义过，
+   CSS 变量解析失败会整条声明作废、且**不会**回退到 .bz-zhu 的 --surface，
+   于是日柱底色变 transparent、露出深色的 .bz-board 底。
+   天干因 .bz-zhu.day .bz-gan 单独给了 --accent 仍看得见，
+   地支沿用 --ink（近黑）就成了「黑字压深底」→ 地支凭空消失。
+   --accent-soft 四套皮肤都有定义，语义也正是「淡暖底」。 */
+.bz-zhu.day{ background:var(--accent-soft); }
 [data-skin="xuanzhi"] .bz-zhu.day{ box-shadow:inset 3px 0 0 var(--accent); }
 [data-skin="qingyu"] .bz-zhu.day{ box-shadow:inset 3px 0 0 var(--accent); }
 [data-skin="cyber"] .bz-zhu.day{
@@ -1881,8 +1887,8 @@ body {
 .bz-xcell:hover{ border-color:var(--accent); }
 .bz-xcell .l2{ font-size:10px; color:var(--ink-3); }
 .bz-xcell.on{
-  background:var(--ming-bg); border-color:var(--accent); color:var(--accent); font-weight:700;
-}
+    background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:700;
+    }
 .bz-xcell.on .l2{ color:var(--accent); }
 .bz-xyears{ display:grid; grid-template-columns:repeat(auto-fill,minmax(74px,1fr)); gap:4px; margin-top:8px; }
 .bz-ycell{
