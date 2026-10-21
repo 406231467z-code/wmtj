@@ -32,6 +32,7 @@ import {
   guaRelations,
   periodLiShu,
   buildSnapshotText,
+  buildFullCopyText,
 } from '../heluo/heluo'
 
 const props = defineProps({
@@ -302,6 +303,36 @@ const liuriRows = computed(() => {
 })
 
 // ---------- 快照导出 ----------
+/** 写剪贴板：优先 async API，失败退回 textarea + execCommand（非 https 也能用） */
+async function putClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch (e) {
+    try {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      ta.setAttribute('readonly', '')
+      ta.style.position = 'fixed'
+      ta.style.top = '-9999px'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(ta)
+      return ok
+    } catch (e2) {
+      return false
+    }
+  }
+}
+
+function flashSnap(text, ok) {
+  snapInfo.value = ok ? `已复制 ${text.length} 字符` : `已生成 ${text.length} 字符（剪贴板不可用，请手动选取）`
+  setTimeout(() => { snapInfo.value = '' }, 3000)
+}
+
+/** 简洁快照（大限/流年只出表格骨架） */
 async function copySnapshot() {
   const m = model.value
   if (!m) return
@@ -311,13 +342,20 @@ async function copySnapshot() {
     birthYear: m.birthYear,
     opts: m.opts,
   })
-  try {
-    await navigator.clipboard.writeText(text)
-    snapInfo.value = `已复制 ${text.length} 字符`
-  } catch (e) {
-    snapInfo.value = `已生成 ${text.length} 字符（剪贴板不可用）`
-  }
-  setTimeout(() => { snapInfo.value = '' }, 3000)
+  flashSnap(text, await putClipboard(text))
+}
+
+/**
+ * 复制全部：本命（起卦/经文/元堂爻辞/命运篇/断验）+ 大限 + 流年，
+ * 每层都带 卦辞 / 易经爻辞 / 摘要 / 诗歌 / 易经爻辞推命。
+ * 不含流月、流日（量级太大）。
+ */
+async function copyAll() {
+  const m = model.value
+  if (!m) return
+  const text = buildFullCopyText(m)
+  if (!text) return
+  flashSnap(text, await putClipboard(text))
 }
 </script>
 
@@ -349,6 +387,14 @@ async function copySnapshot() {
           @change="setOpt('huangdiOffset', +$event.target.value || 2697)"
         />
       </label>
+      <button
+        class="btn tiny"
+        type="button"
+        title="本命 + 全部大限 + 全部流年，含卦辞/爻辞/摘要/诗歌/推命（不含流月、流日）"
+        @click="copyAll"
+      >
+        复制全部结果
+      </button>
       <button class="btn tiny" type="button" @click="copySnapshot">复制盘面文本</button>
       <span v-if="snapInfo" class="hl-snapinfo">{{ snapInfo }}</span>
     </div>

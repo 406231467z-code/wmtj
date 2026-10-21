@@ -256,10 +256,154 @@ export function buildHeluoModel({ pan, bazi, sex, opts }) {
     dy,
     jg,
     st,
+    solar,
     nayin: nayinStr,
     extras,
     opts: opts || {},
   }
+}
+
+// ---------- 一键复制：全部排盘结果 ----------
+const pad2 = (v) => String(v).padStart(2, '0')
+
+/** 单爻的完整条文（易经爻辞 / 摘要 / 诗歌 / 推命 + 对体关系），四个层级共用 */
+function detailLines(guaName, pos, lines, slot, chart) {
+  const yt = yaoText(guaName, pos) || {}
+  const info = guaInfo(guaName) || {}
+  const ni = ((info.mingtiao || {})[slot || 'liunian']) || ''
+  const rels = chart ? guaRelations(lines, chart).filter((r) => r.indexOf('即') < 0) : []
+  const out = []
+  out.push(
+    `【${guaName} · ${yaoName(lines, pos)}】`
+    + (yt.verdict ? `（${yt.verdict}）` : '')
+    + (rels.length ? `　${rels.join('，')}` : '')
+  )
+  if (yt.yaoci) out.push(`易经爻辞：${yt.yaoci}`)
+  if (yt.detail) out.push(`摘要：${yt.detail}`)
+  if (yt.shige) out.push(`诗歌：${yt.shige}`)
+  if (ni) out.push(`易经爻辞推命：${ni}`)
+  if (out.length === 1) out.push('（空爻·无条文）')
+  return out
+}
+
+/** 某卦的理数串（对体关系 + 期数），与大限/流年表格里的 chips 同源 */
+function liShuText(lines, jg, chart) {
+  const rels = chart ? guaRelations(lines, chart).filter((r) => r.indexOf('即') < 0) : []
+  const items = jg ? (periodLiShu(lines, jg) || []) : []
+  return [...rels, ...items.map((i) => i.text)].join('　')
+}
+
+/**
+ * 生成「全部排盘结果」纯文本，供一键复制。
+ *
+ * 与 buildSnapshotText 的分工：
+ *   buildSnapshotText 是简洁快照（大限/流年只出表格骨架，无条文）；
+ *   本函数把每一层的 卦辞 / 易经爻辞 / 摘要 / 诗歌 / 易经爻辞推命 全部展开。
+ *
+ * 按需求**只到流年**：流月（12×72）与流日（30×更多）量级太大，
+ * 塞进一次复制只会让文本不可读，故不含。
+ */
+export function buildFullCopyText(m) {
+  if (!m || !m.chart) return ''
+  const { chart, jg, dy, fourPillars: fp, gender, solar, opts } = m
+  const L = []
+  const blank = () => { if (L.length && L[L.length - 1] !== '') L.push('') }
+
+  // ---------- 抬头 ----------
+  L.push('天机阁 · 河洛理数排盘')
+  if (solar) {
+    L.push(`公历：${solar.y}-${pad2(solar.m)}-${pad2(solar.d)} ${pad2(solar.h)}:${pad2(solar.min)}　${gender}命`)
+  } else {
+    L.push(`${gender}命`)
+  }
+  L.push(`四柱：${fp.year} ${fp.month} ${fp.day} ${fp.hour}${m.nayin ? `（${m.nayin}）` : ''}`)
+  if (m.st && m.st.term) {
+    L.push(`节气：${m.st.houLabel || m.st.term}${m.st.tuyong ? ' · 土用' : ''}`)
+  }
+
+  // ---------- 一、本命 ----------
+  blank()
+  L.push('═══ 一、本命 ═══')
+  L.push(`天数 ${chart.tian} → ${chart.tianGua}　地数 ${chart.di} → ${chart.diGua}`)
+  L.push(`先天卦：${chart.xian.name}　元堂 ${yaoName(chart.xian.lines, chart.xian.yuan)}`)
+  L.push(`后天卦：${chart.hou.name}　元堂 ${yaoName(chart.hou.lines, chart.hou.yuan)}`)
+
+  for (const [label, g, slot] of [
+    ['先天卦', chart.xian, 'xiantian'],
+    ['后天卦', chart.hou, 'houtian'],
+  ]) {
+    blank()
+    const info = guaInfo(g.name) || {}
+    L.push(`── ${label}：${g.name} · 经文 ──`)
+    if (info.meaning) L.push(`卦义：${info.meaning}`)
+    if (info.guaci) L.push(`卦辞：${info.guaci}`)
+    if (info.zongjue) L.push(`总诀：${info.zongjue}`)
+    blank()
+    L.push(`── ${label} · 元堂爻辞 ──`)
+    L.push(...detailLines(g.name, g.yuan, g.lines, slot, chart))
+  }
+
+  // ---------- 命运篇 / 断验 ----------
+  if (jg) {
+    blank()
+    L.push('── 命运篇 ──')
+    L.push(`天元气 ${jg.yuan.tian.gua}${jg.yuan.tian.present ? '（有）' : '（无）'}　地元气 ${jg.yuan.di.gua}${jg.yuan.di.present ? '（有）' : '（无）'}`)
+    L.push(`反天元 ${jg.fanYuan.tian.gua}${jg.fanYuan.tian.present ? '（有）' : '（无）'}　反地元 ${jg.fanYuan.di.gua}${jg.fanYuan.di.present ? '（有）' : '（无）'}`)
+    L.push(`化工 ${jg.huagong.guas.join('/') || '—'}${jg.huagong.present.length ? `（藏${jg.huagong.present.join('')}）` : ''}　判格：${jg.xie ? '葉' : '不葉'}`)
+    L.push(`得势 ${jg.deSheng ? '有' : '无'}　得时 ${jg.deTime ? '有' : '无'}　得体 ${jg.deTi.gua}${jg.deTi.present ? '（有）' : '（无）'}`)
+    L.push(`二数：天${jg.erShu.tian}（${jg.erShu.tianState}）　地${jg.erShu.di}（${jg.erShu.diState}）`)
+    L.push(`元堂：${jg.yuanTang.dangWei ? '当位' : '不当位'}　${jg.yuanTang.youYing ? '有应' : '无应'}　${jg.yuanTang.heLi ? '顺气' : '逆气'}`)
+
+    const season = (m.extras && m.extras.season) || ''
+    const jn = jiNian(m.birthYear, { huangdiOffset: (opts && opts.huangdiOffset) || 2697 })
+    const sj = shiJi(chart, jg)
+    const wsX = season ? wangShuai(chart.xian.name, season) : null
+    const wsH = season ? wangShuai(chart.hou.name, season) : null
+    blank()
+    L.push('── 断验 ──')
+    if (jn) L.push(`纪年：黄帝${jn.huangdi}年 · ${jn.yuan}${jn.yunNo}运 · ${jn.ganzhi}`)
+    if (season) L.push(`时令：${season}`)
+    if (wsX) L.push(`先天卦气：内${wsX.low.wuxing}${wsX.low.state}／外${wsX.up.wuxing}${wsX.up.state}`)
+    if (wsH) L.push(`后天卦气：内${wsH.low.wuxing}${wsH.low.state}／外${wsH.up.wuxing}${wsH.up.state}`)
+    if (sj) {
+      const miss = sj.items.filter((x) => !x.ok).map((x) => x.name)
+      L.push(`十吉：${sj.hitCount}/10${sj.hit.length ? ` 合[${sj.hit.join('、')}]` : ''}${miss.length ? ` 缺[${miss.join('、')}]` : ''}`)
+    }
+  }
+
+  // ---------- 二、大限 ----------
+  if (dy && dy.all) {
+    blank()
+    L.push('═══ 二、大限（歲運）· 阳爻9年 / 阴爻6年 ═══')
+    for (const s of dy.all) {
+      blank()
+      L.push(`■ ${s.ageStart}-${s.ageEnd}岁　${s.gua}　${yaoName(s.lines, s.pos)}　${s.yang ? '阳9' : '阴6'}`)
+      const li = liShuText(s.lines, jg, chart)
+      if (li) L.push(`理数：${li}`)
+      L.push(...detailLines(s.gua, s.pos, s.lines, dy.xian.indexOf(s) >= 0 ? 'xiantian' : 'houtian', chart))
+    }
+
+    // ---------- 三、流年（不含流月 / 流日）----------
+    blank()
+    L.push('═════ 三、流年（不含流月、流日）═════')
+    const step2 = (opts && opts.liunianStep2) || 'ying'
+    for (const s of dy.all) {
+      const rows = liuNian(s, m.birthYear, { step2 })
+      if (!rows.length) continue
+      blank()
+      L.push(`◆ ${s.ageStart}-${s.ageEnd}岁　${s.gua}　${yaoName(s.lines, s.pos)}`)
+      for (const y of rows) {
+        L.push('')
+        const head = y.year ? `${y.age}岁　${y.year}·${y.ganzhi}` : `${y.age}岁　${y.ganzhi || ''}`
+        L.push(`  ◎ ${head}　值年卦 ${y.gua}　${yaoName(y.lines, y.pos)}`)
+        const li = liShuText(y.lines, jg, chart)
+        if (li) L.push(`    理数：${li}`)
+        for (const ln of detailLines(y.gua, y.pos, y.lines, 'liunian', chart)) L.push(`    ${ln}`)
+      }
+    }
+  }
+
+  return L.join('\n')
 }
 
 // 下游渲染要用的函数，统一从这里转出，组件不直接依赖算法文件
