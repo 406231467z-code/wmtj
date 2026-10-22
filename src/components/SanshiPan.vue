@@ -34,8 +34,12 @@ const model = computed(() =>
 const q = computed(() => (model.value ? model.value.dunjia : null))
 const lr = computed(() => (model.value ? model.value.liureng : null))
 
-/** 九宫按洛书排布 4-9-2 / 3-5-7 / 8-1-6 */
-const GRID = [4, 9, 2, 3, 5, 7, 8, 1, 6]
+/**
+ * 九宫格排布：奇门引擎的 palaceNum 是「洛书轨迹号」而非后天八卦数，
+ * 对照 PALACE_NAME 为 1巽 2离 3坤 / 4震 5中 6兑 / 7艮 8坎 9乾，
+ * 所以按 1..9 顺序铺 3×3 即为传统盘面（巽离坤 / 震中兑 / 艮坎乾）。
+ */
+const GRID = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const gridCells = computed(() => {
   const map = {}
   ;((q.value && q.value.cells) || []).forEach((c) => { map[c.palaceNum] = c })

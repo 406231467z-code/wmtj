@@ -68,7 +68,7 @@ const MODE_TITLE = {
   heluo: '河洛理数排盘',
   tieban: '铁板神数排盘',
   taiyi: '太乙神数排盘',
-  sanshi: '三式排盘（奇门·六壬·太乙）',
+  sanshi: '三式排盘',
 }
 const MODE_KEY = 'tianjige_mode'
 
@@ -98,6 +98,17 @@ function syncMbInk() {
   if (!btn) return
   mbOffset.value = btn.offsetLeft - el.clientLeft - 3
   mbWidth.value = btn.offsetWidth
+
+  // 窄屏下切换器横向可滑动（六项放不下一行）：把当前项滚到可见范围中部，
+  // 否则点了「三式」后看不到选中态。容器不溢出时 scrollWidth≈clientWidth，这段自然跳过。
+  if (el.scrollWidth > el.clientWidth + 1) {
+    const left = btn.offsetLeft - (el.clientWidth - btn.offsetWidth) / 2
+    try {
+      el.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
+    } catch (e) {
+      el.scrollLeft = Math.max(0, left)
+    }
+  }
 }
 
 const mbStyle = computed(() => ({

@@ -1552,14 +1552,49 @@ body {
     margin-bottom: 10px;
   }
 
+  /* 标题让位给右侧印章：允许收缩，避免被挤到下一行后印章独占一行 */
   .app-header h1 {
+    flex: 1 1 auto;
+    min-width: 0;
     font-size: 17px;
     letter-spacing: 1.5px;
+  }
+
+  .app-header .skinbar {
+    flex: 0 0 auto;
   }
 
   .app-header h1::after {
     width: 26px;
     margin-top: 3px;
+  }
+
+  /* 术数已有六项（紫微/八字/河洛/铁板/太乙/三式），一行放不下：
+     窄屏改成「独占一行 + 横向滑动」，滑块仍按实测几何定位，滚动后自然跟随。
+     不换成多行是因为滑块是单条绝对定位元素，换行会跨行错位。 */
+  .app-header .modeswitch {
+    order: 3;
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  .app-header .modeswitch::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-header .modeswitch .mb {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 6px 11px;
+    letter-spacing: 0.06em;
   }
 
   /* 手机上只留印章，省一半宽度 */
@@ -2800,10 +2835,46 @@ body {
 }
 
 @media (max-width: 560px) {
+  /* 同铁板：窄屏表格不靠 display:block 横滚（对 table 无效，只会把右侧裁掉），
+     改压紧内边距 + 表头换行 + 单元格折行。 */
+  .ty-row > span,
+  .ss-row > span {
+    flex-basis: 96px;
+  }
+
   .ty-table,
   .ss-table {
-    display: block;
-    overflow-x: auto;
+    display: table;
+    width: 100%;
+    font-size: 12px;
+  }
+
+  .ty-table th,
+  .ss-table th {
+    padding: 4px 4px;
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  .ty-table td,
+  .ss-table td {
+    padding: 4px 4px;
+    word-break: break-word;
+  }
+
+  .ss-cell {
+    min-height: 84px;
+    padding: 5px 6px;
+    font-size: 11px;
+  }
+
+  .ss-cell-gans {
+    gap: 4px;
+    font-size: 10.5px;
+  }
+
+  .ss-cell-head {
+    font-size: 10.5px;
   }
 }
 
@@ -3029,9 +3100,77 @@ body {
     margin-bottom: 3px;
   }
 
-  /* 窄屏让表格自己横向滚 */
+  /* 窄屏表格：不允许整表撑宽后再裁切（display:block 的 table 上 overflow 不生效），
+     改为压紧列距 + 表头换行 + 条文折行，让 5 列表在 390 内排得下。 */
   .tb-table {
+    display: table;
+    width: 100%;
+    font-size: 12px;
+  }
+
+  .tb-table th {
+    padding: 4px 4px;
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  .tb-table td {
+    padding: 4px 4px;
+    word-break: break-word;
+  }
+
+  /* 条文列是唯一的长文本列，吃掉剩余宽度 */
+  .tb-table td.tb-verse {
+    min-width: 0;
+  }
+
+  .tb-verse-line {
+    word-break: break-word;
+  }
+
+  /* 推算流程：四列在手机上必然挤（输入列是长公式），改为逐条卡片，
+     每步四行「步骤 / 输入 / 依据 / 结果」，不再横向挤压。 */
+  .tb-flow,
+  .tb-flow tbody {
     display: block;
-    overflow-x: auto;
+    width: 100%;
+  }
+
+  .tb-flow thead {
+    display: none;
+  }
+
+  .tb-flow tr {
+    display: block;
+    padding: 7px 0;
+    border-bottom: 1px dashed var(--line-soft);
+  }
+
+  .tb-flow tr:last-child {
+    border-bottom: 0;
+  }
+
+  .tb-flow td {
+    display: flex;
+    gap: 8px;
+    padding: 1px 0;
+    border: 0;
+    font-size: 12.5px;
+    line-height: 1.55;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .tb-flow td::before {
+    content: attr(data-label);
+    flex: 0 0 32px;
+    color: var(--ink-3);
+    font-size: 11px;
+    line-height: 1.7;
+  }
+
+  .tb-flow td.tb-step {
+    color: var(--ink);
+    font-weight: 600;
   }
 }

@@ -165,16 +165,16 @@ async function copyAll() {
     <!-- ═══ 本命推算流程 ═══ -->
     <div class="tb-card">
       <h3>本命推算流程</h3>
-      <table class="tb-table">
+      <table class="tb-table tb-flow">
         <thead>
           <tr><th>步骤</th><th>输入</th><th>依据</th><th>结果</th></tr>
         </thead>
         <tbody>
           <tr v-for="s in b.steps" :key="s.key">
-            <td class="tb-step">{{ s.label }}</td>
-            <td>{{ s.input }}</td>
-            <td class="tb-dim">{{ s.table }}</td>
-            <td class="tb-out">{{ s.output !== undefined ? s.output : '—' }}</td>
+            <td class="tb-step" data-label="步骤">{{ s.label }}</td>
+            <td data-label="输入">{{ s.input }}</td>
+            <td class="tb-dim" data-label="依据">{{ s.table }}</td>
+            <td class="tb-out" data-label="结果">{{ s.output !== undefined ? s.output : '—' }}</td>
           </tr>
         </tbody>
       </table>
