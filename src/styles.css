@@ -2507,6 +2507,307 @@ body {
 }
 
 /* ==========================================================================
+   太乙神数 / 三式（.ty-*、.ss-*）
+   与河洛、铁板同源的设计令牌，四套皮肤自动跟随。
+   ========================================================================== */
+.ty,
+.ss {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.ty-empty,
+.ss-empty {
+  padding: 24px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink-3);
+  font-size: 13px;
+  text-align: center;
+}
+
+.ty-bar,
+.ss-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.ty-kv b,
+.ss-kv b {
+  margin-left: 4px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.ty-opt,
+.ss-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.ty-opt select,
+.ss-opt select {
+  height: 26px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.ty-snapinfo,
+.ss-snapinfo {
+  color: var(--ok);
+  font-size: 11.5px;
+}
+
+.ty-card,
+.ss-card {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+.ty-card h3,
+.ss-card h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ty-row,
+.ss-row {
+  display: flex;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--line-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.ty-row:last-child,
+.ss-row:last-child {
+  border-bottom: 0;
+}
+
+.ty-row > span,
+.ss-row > span {
+  flex: 0 0 140px;
+  color: var(--ink-3);
+}
+
+.ty-row > strong,
+.ss-row > strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 500;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.ty-table,
+.ss-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  margin-bottom: 8px;
+}
+
+.ty-table th,
+.ss-table th {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-3);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ty-table td,
+.ss-table td {
+  padding: 5px 6px;
+  border-bottom: 1px dashed var(--line-soft);
+  color: var(--ink);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.ty-dim,
+.ss-dim {
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.ty-out,
+.ss-out {
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.ty-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  align-items: center;
+}
+
+.ty-tag,
+.ss-tag {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-2);
+  font-size: 11.5px;
+  line-height: 18px;
+}
+
+.ty-tag.is-good,
+.ss-tag.is-good {
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--line));
+  color: var(--ok);
+}
+
+.ty-tag.is-bad,
+.ss-tag.is-bad {
+  border-color: color-mix(in srgb, var(--danger, #c0392b) 40%, var(--line));
+  color: var(--danger, #c0392b);
+}
+
+.ty-school,
+.ss-school {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.ty-note,
+.ss-note {
+  padding: 2px 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+/* ---------- 三式：奇门九宫 ---------- */
+.ss-sub {
+  margin: 10px 0 4px;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.ss-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ss-cell {
+  min-height: 94px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ss-cell.is-center {
+  border-style: dashed;
+  background: var(--surface);
+  color: var(--ink-2);
+}
+
+.ss-cell.is-zf {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ok) 45%, transparent);
+}
+
+.ss-cell.is-zs {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, #b7791f 45%, transparent);
+}
+
+.ss-cell-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+
+.ss-cell-mid {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 3px 0;
+  color: var(--ink);
+}
+
+.ss-cell-mid b {
+  font-weight: 600;
+}
+
+.ss-cell-mid em {
+  color: var(--ink-2);
+  font-style: normal;
+}
+
+.ss-cell-gans {
+  display: flex;
+  gap: 8px;
+  color: var(--ink-2);
+  font-size: 11.5px;
+}
+
+.ss-cell-marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.ss-cell-marks .ss-tag {
+  padding: 0 4px;
+  font-size: 10.5px;
+  line-height: 16px;
+}
+
+@media (max-width: 560px) {
+  .ss-cell {
+    min-height: 82px;
+  }
+}
+
+@media (max-width: 560px) {
+  .ty-table,
+  .ss-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+/* ==========================================================================
    铁板神数（.tb-*）
    与河洛同源的设计令牌，四套皮肤自动跟随。
    结构移植自 horosa 的 ZhengChuanMain.js renderTieban()（原 antd Card/Table）。

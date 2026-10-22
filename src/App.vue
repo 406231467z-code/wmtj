@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, reactive, ref, watch } from 'vue'
 import { paipan } from './ziwei/paipan.js'
 import {
   buildXianPan,
@@ -21,6 +21,11 @@ import ZiweiPan from './components/ZiweiPan.vue'
 import BaziPan from './components/BaziPan.vue'
 import HeLuoPan from './components/HeLuoPan.vue'
 import TieBanPan from './components/TieBanPan.vue'
+// 太乙内核（core/*.js 立成表约 66KB）同样按需加载
+const TaiyiPan = defineAsyncComponent(() => import('./components/TaiyiPan.vue'))
+// 三式的奇门引擎（DunJiaCalc 及依赖数表约 300KB）体量大，
+// 做成异步组件：切到「三式」才下载，不拖首屏。
+const SanshiPan = defineAsyncComponent(() => import('./components/SanshiPan.vue'))
 import XianBar from './components/XianBar.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import ChartLibrary from './components/ChartLibrary.vue'
@@ -53,13 +58,17 @@ const MODES = [
   { k: 'ziwei', t: '紫微斗数' },
   { k: 'bazi', t: '八字' },
   { k: 'heluo', t: '河洛理数' },
-  { k: 'tieban', t: '铁板神数' }
+  { k: 'tieban', t: '铁板神数' },
+  { k: 'taiyi', t: '太乙神数' },
+  { k: 'sanshi', t: '三式' }
 ]
 const MODE_TITLE = {
   ziwei: '紫微斗数排盘',
   bazi: '四柱八字排盘',
   heluo: '河洛理数排盘',
   tieban: '铁板神数排盘',
+  taiyi: '太乙神数排盘',
+  sanshi: '三式排盘（奇门·六壬·太乙）',
 }
 const MODE_KEY = 'tianjige_mode'
 
@@ -1591,5 +1600,27 @@ onMounted(() => {
       </p>
     </div>
     <TieBanPan v-else :pan="pan" :bazi="baziRaw" :sex="form.sex" />
+  </template>
+
+  <!-- ═══════════════ 太乙神数 ═══════════════ -->
+  <template v-else-if="mode === 'taiyi'">
+    <div v-if="!pan" class="panel empty-state">
+      <p>
+        填一下<b>姓名</b>并点<b>「开始排盘」</b>。太乙神数与紫微共用同一份出生资料，
+        起局需要四柱干支与农历月日，所以先排盘再切过来即可。
+      </p>
+    </div>
+    <TaiyiPan v-else :pan="pan" :bazi="baziRaw" :sex="form.sex" />
+  </template>
+
+  <!-- ═══════════════ 三式（奇门·六壬·太乙） ═══════════════ -->
+  <template v-else-if="mode === 'sanshi'">
+    <div v-if="!pan" class="panel empty-state">
+      <p>
+        填一下<b>姓名</b>并点<b>「开始排盘」</b>。三式与紫微共用同一份出生资料：
+        奇门按节气置闰定局、六壬按月将起课、太乙按积数起局，都要先有四柱与农历。
+      </p>
+    </div>
+    <SanshiPan v-else :pan="pan" :bazi="baziRaw" :sex="form.sex" />
   </template>
 </template>
